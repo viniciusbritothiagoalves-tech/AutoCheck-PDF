@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Laudos - Oficina Mecânica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
+        
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+        }
+        
+        body { background: var(--bg-dark); color: var(--text); min-height: 100vh; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; color: var(--primary); margin-bottom: 5px; }
+        
+        .card { background: var(--bg-card); border-radius: 12px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); }
+        
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--primary); }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        
+        .btn { background: var(--primary); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-danger { background: var(--danger); }
+        .btn-sm { padding: 8px 12px; font-size: 12px; }
+        .btn-block { width: 100%; }
+        
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: var(--bg-input); border: none; color: var(--text-muted); border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .tab.active { background: var(--primary); color: #fff; }
+        
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .service-item { background: var(--bg-input); padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .service-item.selected { border-color: var(--primary); background: rgba(37, 99, 235, 0.2); }
+        .service-item input { accent-color: var(--primary); }
+        
+        .item-row { background: var(--bg-input); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--success); }
+        .item-row.atencao { border-left-color: var(--warning); }
+        .item-row.critico { border-left-color: var(--danger); }
+        .item-row .item-header { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .item-row input, .item-row select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
+        .item-row input { flex: 1; min-width: 150px; }
+        .item-row textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
+        
+        .add-btn { background: transparent; border: 2px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; }
+        
+        .client-list { display: grid; gap: 12px; }
+        .client-item { background: var(--bg-input); border-radius: 10px; padding: 15px; border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .client-item:hover { border-color: var(--primary); }
+        .client-info h3 { font-size: 15px; margin-bottom: 3px; }
+        .client-info p { font-size: 12px; color: var(--text-muted); }
+        
+        .auto-save { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity 0.3s; }
+        .auto-save.show { opacity: 1; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--bg-card); border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; }
+        .modal-content h3 { color: var(--primary); margin-bottom: 20px; }
+        
+        .doc-preview { background: #fff; color: #222; padding: 25px; border-radius: 8px; max-height: 400px; overflow-y: auto; font-size: 11px; }
+        .doc-preview h1 { text-align: center; font-size: 18px; margin-bottom: 5px; color: #000; }
+        .doc-preview h2 { font-size: 13px; margin: 12px 0 8px; background: #f0f0f0; padding: 5px; color: #000; }
+        .doc-preview table { width: 100%; border-collapse: collapse; }
+        .doc-preview th { background: #1a1a2e; color: #fff; padding: 6px; text-align: left; font-size: 10px; }
+        .doc-preview td { padding: 5px; border: 1px solid #ddd; font-size: 10px; }
+        .doc-preview .status-ok { color: #16a34a; font-weight: 700; }
+        .doc-preview .status-atencao { color: #ca8a04; font-weight: 700; }
+        .doc-preview .status-critico { color: #dc2626; font-weight: 700; }
+        .doc-preview .urgente { background: #fee; color: #dc2626; font-weight: 700; padding: 8px; border-radius: 4px; }
+        .doc-preview .assinatura { margin-top: 30px; text-align: right; }
+        .doc-preview .linha { border-bottom: 1px solid #333; width: 200px; display: inline-block; margin-top: 40px; }
+        
+        .wa-preview { background: #e5ddd6; padding: 15px; border-radius: 8px; }
+        .wa-bubble { background: #dcf8c6; padding: 10px 14px; border-radius: 8px; display: inline-block; font-size: 13px; line-height: 1.5; word-wrap: break-word; }
+        
+        .hidden { display: none !important; }
+        
+        @media print { body { background: #fff; } .modal-content { box-shadow: none; } }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div id="loginScreen" class="container" style="max-width: 400px; padding-top: 50px;">
+        <div class="card">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Acessar Sistema</h2>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="seu@email.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Senha</label>
+                <input type="password" id="loginSenha" placeholder="Sua senha">
+            </div>
+            <button class="btn btn-block" onclick="fazerLogin()" style="margin-bottom: 10px;">Entrar</button>
+            <div style="text-align: center;">
+                <a href="#" onclick="mostrarCadastro()" style="color: var(--primary); font-size: 13px;">Criar conta</a>
+                <span style="color: var(--text-muted); margin: 0 10px;">|</span>
+                <a href="#" onclick="mostrarRecuperar()" style="color: var(--primary); font-size: 13px;">Esqueci a senha</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cadastro -->
+    <div id="cadastroScreen" class="container hidden" style="max-width: 400px; padding-top: 30px;">
+        <div class="card">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Criar Conta</h2>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nome da Oficina</label>
+                <input type="text" id="cadNome" placeholder="Nome da oficina">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email (-login)</label>
+                <input type="email" id="cadEmail" placeholder="seu@email.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Criar Senha</label>
+                <input type="password" id="cadSenha" placeholder="••••••" oninput="verificarSenha(this.value, 'cad')">
+            </div>
+            <div id="senhaRequisito" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="s-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dígitos</span>
+                <span id="s-mai" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">A-Z</span>
+                <span id="s-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
+                <span id="s-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>WhatsApp</label>
+                <input type="tel" id="cadWhatsapp" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Logo da Oficina (opcional)</label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="logoPreview" style="width: 60px; height: 60px; border-radius: 8px; background: var(--bg-input); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--border);">
+                        <span style="font-size: 10px; color: var(--text-muted); text-align: center;">Logo</span>
+                    </div>
+                    <label class="btn btn-sm" style="cursor: pointer; display: inline-block;">
+                        Selecionar Arquivo
+                        <input type="file" id="cadLogo" accept="image/*" onchange="previsualizarLogo(this)" style="display: none;">
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Pergunta de Segurança</label>
+                <select id="cadPergunta">
+                    <option value="pet">Qual nome do seu primeiro pet?</option>
+                    <option value="cidade">Qual cidade você nasceu?</option>
+                    <option value="escola">Nome da primeira escola?</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Resposta</label>
+                <input type="text" id="cadResposta" placeholder="Sua resposta">
+            </div>
+            <button class="btn btn-success btn-block" onclick="criarConta()" style="margin-bottom: 10px;">Criar Conta</button>
+            <div style="text-align: center;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">Já tem conta? Entrar</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recuperar Senha -->
+    <div id="recuperarScreen" class="container hidden" style="max-width: 400px; padding-top: 30px;">
+        <div class="card">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Recuperar Senha</h2>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" id="recEmail" placeholder="seu@email.com">
+            </div>
+            <button class="btn btn-block" onclick="verificarPergunta()" style="margin-bottom: 15px;">Continuar</button>
+            <div id="perguntaSeguranca" class="hidden">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label id="lblPergunta">Resposta:</label>
+                    <input type="text" id="recResposta" placeholder="Sua resposta">
+                </div>
+                <button class="btn btn-block" onclick="verificarResposta()" style="margin-bottom: 15px;">Verificar</button>
+            </div>
+            <div id="novaSenha" class="hidden">
+<div class="form-group" style="margin-bottom: 10px;">
+                <label>Nova Senha</label>
+                <input type="password" id="novaSenhaInput" placeholder="••••••" oninput="verificarSenha(this.value, 'rec')">
+            </div>
+            <div id="senhaRequisitoRec" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="r-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dígitos</span>
+                <span id="r-mai" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">A-Z</span>
+                <span id="r-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
+                <span id="r-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
+            </div>
+                <button class="btn btn-success btn-block" onclick="salvarNovaSenha()">Salvar Nova Senha</button>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">Voltar ao login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Principal -->
+    <div id="mainApp" class="container hidden">
+        <div class="header">
+            <h1 id="appTitulo">Sistema de Laudos</h1>
+            <div class="btn-group" style="margin-top: 15px;">
+                <button class="btn btn-sm" onclick="mostrarClientes()">Clientes</button>
+                <button class="btn btn-sm" onclick="novoCliente()">+ Novo Cliente</button>
+                <button class="btn btn-sm btn-warning" onclick="editarPerfil()">Editar Perfil</button>
+                <button class="btn btn-sm btn-danger" onclick="logout()">Sair</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">Atendimentos em Andamento</div>
+            <div id="clientesLista" class="client-list"></div>
+            <p id="semClientes" class="hidden" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum atendimento</p>
+        </div>
+    </div>
+
+    <!-- Formulário Cliente -->
+    <div id="formCliente" class="container hidden">
+        <div class="card">
+            <div class="card-title" id="tituloForm">Novo Cliente</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nome do Cliente</label>
+                    <input type="text" id="cliNome" placeholder="Nome do cliente">
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp</label>
+                    <input type="tel" id="cliWhatsapp" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Modelo do Veículo</label>
+                    <input type="text" id="cliVeiculo" placeholder="Ex: Volkswagen Gol">
+                </div>
+                <div class="form-group">
+                    <label>Placa</label>
+                    <input type="text" id="cliPlaca" placeholder="ABC-1234" style="text-transform: uppercase;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ano</label>
+                    <input type="text" id="cliAno" placeholder="2020">
+                </div>
+                <div class="form-group">
+                    <label>Km Atual</label>
+                    <input type="text" id="cliKm" placeholder="45.000">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="salvarCliente()">Salvar</button>
+                <button class="btn" onclick="mostrarClientes()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Laudo -->
+    <div id="formLaudo" class="container hidden">
+        <div class="card">
+            <div class="card-title" id="laudoTitulo">Atendimento</div>
+            <div class="tabs">
+                <button class="tab active" onclick="mudarAba('itens')">Itens</button>
+                <button class="tab" onclick="mudarAba('servicos')">Serviços</button>
+                <button class="tab" onclick="mudarAba('garantia')">Garantia</button>
+            </div>
+            
+            <div id="aba-itens">
+                <div id="itensLista"></div>
+                <button class="add-btn" onclick="adicionarItem()">+ Adicionar Item</button>
+            </div>
+            
+            <div id="aba-servicos" class="hidden">
+                <div class="services-grid" id="servicesGrid"></div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Outros serviços</label>
+                    <textarea id="outrosServicos" oninput="autoSalvar()"></textarea>
+                </div>
+            </div>
+            
+            <div id="aba-garantia" class="hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Garantia</label>
+                        <input type="text" id="laudoGarantia" placeholder="90 dias" oninput="autoSalvar()">
+                    </div>
+                    <div class="form-group">
+                        <label>Próxima Revisão</label>
+                        <input type="text" id="laudoProxima" placeholder="A cada 6 meses" oninput="autoSalvar()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="laudoObs" oninput="autoSalvar()"></textarea>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="gerarLaudo('orcamento')">Gerar Orçamento</button>
+                <button class="btn btn-warning" onclick="gerarLaudo('laudo')">Gerar Laudo Final</button>
+                <button class="btn" onclick="mostrarClientes()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Preview -->
+    <div id="modalPreview" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitulo">Documento</h3>
+            <div class="tabs">
+                <button class="tab active" onclick="mostrarDocAba('docLaudo')">Laudo</button>
+                <button class="tab" onclick="mostrarDocAba('docResumo')">Resumo</button>
+                <button class="tab" onclick="mostrarDocAba('docWhatsapp')">WhatsApp</button>
+            </div>
+            <div id="docLaudo" class="doc-preview"></div>
+            <div id="docResumo" class="doc-preview hidden"></div>
+            <div id="docWhatsapp" class="hidden" style="padding: 20px; background: linear-gradient(135deg, #075e54 0%, #128c7e 100%); border-radius: 12px;">
+                <div style="background: #fff; border-radius: 12px; padding: 15px; max-width: 350px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <div style="width: 40px; height: 40px; background: #25d366; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #fff; font-weight: bold;">W</span>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #333;">WhatsApp</div>
+                            <div style="font-size: 11px; color: #888;">Texto de exemplo</div>
+                        </div>
+                    </div>
+                    <div id="waPreview" style="background: #f0f0f0; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #222; word-wrap: break-word; white-space: pre-wrap;"></div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-success" onclick="enviarWhatsApp()" style="background: #25d366; padding: 12px 30px; font-size: 14px;">Abrir WhatsApp</button>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="fecharModal()">Fechar</button>
+                <button class="btn" onclick="imprimirDoc()">Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="autoSaveMsg" class="auto-save">✓ Salvo</div>
+
+    <script>
+        let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+        let usuarioAtual = null;
+        let clientes = [];
+        let clienteAtual = null;
+        let tipoLaudo = '';
+        let whatsappLink = '';
+
+        const servicosLista = ['Revisão geral', 'Troca de óleo', 'Freios', 'Suspensão', 'Alinhamento', 'Balanceamento', 'Filtros', 'Filtro', 'Higienização ar condicionado', 'Correias', 'Escapamento', 'Arrefecimento', 'Elétrica', 'Injeção eletrônica', 'Diagnóstico', 'Embreagem', 'Câmbio', 'Direção', 'Pneus', 'Bateria', 'Vidros', 'Pintura', 'Funilaria', 'Inspeção', 'Vistoria'];
+
+        function validarSenha(senha) {
+            if (senha.length < 6) return { ok: false, msg: 'Senha deve ter no mínimo 6 dígitos' };
+            if (!/[A-Z]/.test(senha)) return { ok: false, msg: 'Senha deve ter pelo menos 1 letra maiúscula' };
+            if (!/[0-9]/.test(senha)) return { ok: false, msg: 'Senha deve ter pelo menos 1 número' };
+            if (!/[!@#$%&*]/.test(senha)) return { ok: false, msg: 'Senha deve ter pelo menos 1 caractere especial (!@#$%&*)' };
+            return { ok: true };
+        }
+
+        function verificarSenha(senha, tipo) {
+            const min = senha.length >= 6;
+            const mai = /[A-Z]/.test(senha);
+            const num = /[0-9]/.test(senha);
+            const esp = /[!@#$%&*]/.test(senha);
+            
+            if (tipo === 'cad') {
+                document.getElementById('s-min').style.background = min ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('s-min').style.color = min ? '#fff' : 'var(--text-muted)';
+                document.getElementById('s-mai').style.background = mai ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('s-mai').style.color = mai ? '#fff' : 'var(--text-muted)';
+                document.getElementById('s-num').style.background = num ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('s-num').style.color = num ? '#fff' : 'var(--text-muted)';
+                document.getElementById('s-esp').style.background = esp ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('s-esp').style.color = esp ? '#fff' : 'var(--text-muted)';
+            } else {
+                document.getElementById('r-min').style.background = min ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('r-min').style.color = min ? '#fff' : 'var(--text-muted)';
+                document.getElementById('r-mai').style.background = mai ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('r-mai').style.color = mai ? '#fff' : 'var(--text-muted)';
+                document.getElementById('r-num').style.background = num ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('r-num').style.color = num ? '#fff' : 'var(--text-muted)';
+                document.getElementById('r-esp').style.background = esp ? 'var(--success)' : 'var(--bg-input)';
+                document.getElementById('r-esp').style.color = esp ? '#fff' : 'var(--text-muted)';
+            }
+        }
+
+        function previsualizarLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoPreview').innerHTML = '<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover;">';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function init() {
+            renderizarServicos();
+        }
+
+        function mostrarLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('cadastroScreen').classList.add('hidden');
+            document.getElementById('recuperarScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.add('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
+        }
+
+        function mostrarCadastro() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('cadastroScreen').classList.remove('hidden');
+        }
+
+        function mostrarRecuperar() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('recuperarScreen').classList.remove('hidden');
+            document.getElementById('perguntaSeguranca').classList.add('hidden');
+            document.getElementById('novaSenha').classList.add('hidden');
+        }
+
+        async function criarConta() {
+            const nome = document.getElementById('cadNome').value;
+            const email = document.getElementById('cadEmail').value;
+            const senha = document.getElementById('cadSenha').value;
+            const whatsapp = document.getElementById('cadWhatsapp').value;
+            const pergunta = document.getElementById('cadPergunta').value;
+            const resposta = document.getElementById('cadResposta').value;
+
+            if (!nome || !email || !resposta) {
+                alert('Preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            if (!window.modoEdicao && !senha) {
+                alert('Informe a senha.');
+                return;
+            }
+
+            if (senha) {
+                const validacao = validarSenha(senha);
+                if (!validacao.ok) {
+                    alert(validacao.msg);
+                    return;
+                }
+            }
+
+            if (!window.modoEdicao && usuarios.find(u => u.email === email)) {
+                alert('Email já cadastrado');
+                return;
+            }
+
+            let logoBase64 = '';
+            const logoInput = document.getElementById('cadLogo');
+            if (logoInput && logoInput.files && logoInput.files[0]) {
+                logoBase64 = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(logoInput.files[0]);
+                });
+            }
+
+            if (window.modoEdicao) {
+                const idx = usuarios.findIndex(u => u.email === email);
+                if (idx !== -1) {
+                    usuarios[idx] = { 
+                        ...usuarios[idx], 
+                        nome, 
+                        senha: senha || usuarios[idx].senha,
+                        whatsapp, 
+                        logo: logoBase64 || usuarios[idx].logo 
+                    };
+                    usuarioAtual = usuarios[idx];
+                }
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                alert('Perfil atualizado!');
+                document.getElementById('cadEmail').disabled = false;
+                window.modoEdicao = false;
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('cadastroScreen').classList.add('hidden');
+                document.querySelector('#cadastroScreen h2').textContent = 'Criar Conta';
+                document.querySelector('#cadastroScreen .btn-success').textContent = 'Criar Conta';
+                return;
+            }
+
+            usuarios.push({ nome, email, senha, whatsapp, pergunta, resposta, logo: logoBase64 });
+            }
+
+            usuarios.push({ nome, email, senha, whatsapp, pergunta, resposta, logo: logoBase64 });
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            alert('Conta criada com sucesso! Faça login.');
+            mostrarLogin();
+        }
+
+        function fazerLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginSenha').value;
+
+            usuarioAtual = usuarios.find(u => u.email === email && u.senha === senha);
+
+            if (usuarioAtual) {
+                const dadosCli = localStorage.getItem('clientes_' + email);
+                clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('appTitulo').textContent = usuarioAtual.nome;
+                mostrarClientes();
+            } else {
+                alert('Email ou senha incorretos');
+            }
+        }
+
+        function verificarPergunta() {
+            const email = document.getElementById('recEmail').value;
+            const user = usuarios.find(u => u.email === email);
+            if (!user) {
+                alert('Email não encontrado');
+                return;
+            }
+            const perguntas = { pet: 'Qual nome do seu primeiro pet?', cidade: 'Qual cidade você nasceu?', escola: 'Nome da primeira escola?' };
+            document.getElementById('lblPergunta').textContent = perguntas[user.pergunta];
+            document.getElementById('perguntaSeguranca').classList.remove('hidden');
+            window.recuperarUser = user;
+        }
+
+        function verificarResposta() {
+            const resp = document.getElementById('recResposta').value.toLowerCase();
+            if (resp === window.recuperarUser.resposta.toLowerCase()) {
+                document.getElementById('perguntaSeguranca').classList.add('hidden');
+                document.getElementById('novaSenha').classList.remove('hidden');
+            } else {
+                alert('Resposta incorreta');
+            }
+        }
+
+        function salvarNovaSenha() {
+            const novaSenha = document.getElementById('novaSenha').value;
+            const validacao = validarSenha(novaSenha);
+            if (!validacao.ok) {
+                alert(validacao.msg);
+                return;
+            }
+            window.recuperarUser.senha = novaSenha;
+            const idx = usuarios.findIndex(u => u.email === window.recuperarUser.email);
+            usuarios[idx] = window.recuperarUser;
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            alert('Senha alterada! Faça login.');
+            mostrarLogin();
+        }
+
+        function logout() {
+            usuarioAtual = null;
+            clientes = [];
+            localStorage.removeItem('sessao');
+            mostrarLogin();
+        }
+
+        function editarPerfil() {
+            const user = usuarioAtual;
+            document.getElementById('cadNome').value = user.nome;
+            document.getElementById('cadEmail').value = user.email;
+            document.getElementById('cadEmail').disabled = true;
+            document.getElementById('cadSenha').value = '';
+            document.getElementById('cadWhatsapp').value = user.whatsapp || '';
+            
+            if (user.logo) {
+                document.getElementById('logoPreview').innerHTML = '<img src="' + user.logo + '" style="width: 100%; height: 100%; object-fit: cover;">';
+            }
+            
+            window.modoEdicao = true;
+            document.getElementById('cadastroScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.querySelector('#cadastroScreen h2').textContent = 'Editar Perfil';
+            document.querySelector('#cadastroScreen .btn-success').textContent = 'Salvar Alterações';
+            document.querySelector('#cadastroScreen .btn-block + div a').textContent = 'Cancelar';
+            document.querySelector('#cadastroScreen .btn-block + div a').onclick = function() { mostrarLogin(); };
+        }
+
+        function renderizarServicos() {
+            document.getElementById('servicesGrid').innerHTML = servicosLista.map(s => 
+                `<label class="service-item"><input type="checkbox" value="${s}" onchange="this.parentElement.classList.toggle('selected', this.checked); autoSalvar()"> ${s}</label>`
+            ).join('');
+        }
+
+        function mostrarClientes() {
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('formCliente').classList.add('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
+            renderizarClientes();
+        }
+
+        function renderizarClientes() {
+            const lista = document.getElementById('clientesLista');
+            const sem = document.getElementById('semClientes');
+            if (clientes.length === 0) {
+                lista.innerHTML = '';
+                sem.classList.remove('hidden');
+            } else {
+                sem.classList.add('hidden');
+                lista.innerHTML = clientes.map((c, i) => `
+                    <div class="client-item" onclick="abrirLaudo(${i})">
+                        <div class="client-info">
+                            <h3>${c.nome}</h3>
+                            <p>${c.veiculo} ${c.placa ? '- ' + c.placa : ''}</p>
+                            ${(c.historicoPdfs && c.historicoPdfs.length > 0) ? '<p style="font-size:11px;color:var(--success)">📄 ' + c.historicoPdfs.length + ' documento(s) salvo(s)</p>' : ''}
+                        </div>
+                        <div style="display:flex;gap:5px;">
+                            ${(c.historicoPdfs && c.historicoPdfs.length > 0) ? '<button class="btn btn-sm" style="background:var(--success)" onclick="event.stopPropagation(); verHistorico(' + i + ')">📄</button>' : ''}
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); abrirLaudo(${i})">Atender</button>
+                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); excluirCliente(${i})">×</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function novoCliente() {
+            clienteAtual = null;
+            document.getElementById('tituloForm').textContent = 'Novo Cliente';
+            document.getElementById('cliNome').value = '';
+            document.getElementById('cliWhatsapp').value = '';
+            document.getElementById('cliVeiculo').value = '';
+            document.getElementById('cliPlaca').value = '';
+            document.getElementById('cliAno').value = '';
+            document.getElementById('cliKm').value = '';
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.remove('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
+        }
+
+        function salvarCliente() {
+            const nome = document.getElementById('cliNome').value;
+            if (!nome) { alert('Informe o nome do cliente'); return; }
+
+            const dados = {
+                nome,
+                whatsapp: document.getElementById('cliWhatsapp').value,
+                veiculo: document.getElementById('cliVeiculo').value,
+                placa: document.getElementById('cliPlaca').value,
+                ano: document.getElementById('cliAno').value,
+                km: document.getElementById('cliKm').value,
+                itens: [],
+                servicos: [],
+                garantia: '',
+                proxima: '',
+                obs: '',
+                ultimaAtt: new Date().toISOString(),
+                historicoPdfs: []
+            };
+
+            if (clienteAtual !== null) {
+                clientes[clienteAtual] = { ...clientes[clienteAtual], ...dados };
+            } else {
+                clientes.push(dados);
+            }
+
+            salvarDados();
+            mostrarClientes();
+        }
+
+        function excluirCliente(idx) {
+            const c = clientes[idx];
+            const temDocs = c.historicoPdfs && c.historicoPdfs.length > 0;
+            const msg = temDocs 
+                ? 'Este cliente tem ' + c.historicoPdfs.length + ' documento(s) salvo(s). Deseja excluir mesmo assim?' 
+                : 'Excluir este cliente e todos os dados do atendimento?';
+            if (confirm(msg)) {
+                clientes.splice(idx, 1);
+                salvarDados();
+                renderizarClientes();
+            }
+        }
+
+        function abrirLaudo(idx) {
+            clienteAtual = idx;
+            const c = clientes[idx];
+            document.getElementById('laudoTitulo').textContent = `${c.nome} - ${c.veiculo}`;
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.add('hidden');
+            document.getElementById('formLaudo').classList.remove('hidden');
+            mudarAba('itens');
+            renderizarItens();
+            document.getElementById('outrosServicos').value = c.servicos.filter(s => !servicosLista.includes(s)).join(', ');
+            document.querySelectorAll('#servicesGrid input').forEach(cb => {
+                cb.checked = c.servicos.includes(cb.value);
+                cb.parentElement.classList.toggle('selected', cb.checked);
+            });
+            document.getElementById('laudoGarantia').value = c.garantia || '';
+            document.getElementById('laudoProxima').value = c.proxima || '';
+            document.getElementById('laudoObs').value = c.obs || '';
+        }
+
+        function renderizarItens() {
+            const c = clientes[clienteAtual];
+            if (!c.itens || c.itens.length === 0) {
+                c.itens = [{ nome: '', status: 'ok', obs: '' }];
+            }
+            document.getElementById('itensLista').innerHTML = c.itens.map((item, i) => `
+                <div class="item-row ${item.status}">
+                    <div class="item-header">
+                        <input type="text" placeholder="Item" value="${item.nome}" oninput="autoSalvar()">
+                        <select onchange="mudarStatus(this, ${i})">
+                            <option value="ok" ${item.status==='ok'?'selected':''}>OK</option>
+                            <option value="atencao" ${item.status==='atencao'?'selected':''}>Atenção</option>
+                            <option value="critico" ${item.status==='critico'?'selected':''}>Crítico</option>
+                        </select>
+                        <button class="btn btn-sm btn-danger" onclick="removerItem(${i})">×</button>
+                    </div>
+                    <textarea placeholder="Observação" oninput="autoSalvar()">${item.obs}</textarea>
+                </div>
+            `).join('');
+        }
+
+        function adicionarItem() {
+            clientes[clienteAtual].itens.push({ nome: '', status: 'ok', obs: '' });
+            autoSalvar();
+            renderizarItens();
+        }
+
+        function removerItem(idx) {
+            clientes[clienteAtual].itens.splice(idx, 1);
+            autoSalvar();
+            renderizarItens();
+        }
+
+        function mudarStatus(select, idx) {
+            select.closest('.item-row').className = 'item-row ' + select.value;
+            clientes[clienteAtual].itens[idx].status = select.value;
+            autoSalvar();
+        }
+
+        function verHistorico(idx) {
+            const c = clientes[idx];
+            if (!c.historicoPdfs || c.historicoPdfs.length === 0) {
+                alert('Nenhum documento salvo');
+                return;
+            }
+            
+            let html = '<div style="padding:15px;">';
+            html += '<h3 style="margin-bottom:15px;">📄 Histórico de Documentos</h3>';
+            html += '<p style="margin-bottom:15px;font-size:13px;color:#666;">' + c.nome + ' - ' + c.veiculo + '</p>';
+            
+            c.historicoPdfs.forEach((pdf, i) => {
+                const data = new Date(pdf.data);
+                const dataStr = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const tipoLabel = pdf.tipo === 'orcamento' ? '📋 Orçamento' : '✅ Laudo Final';
+                
+                html += '<div style="background:var(--bg-input);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">';
+                html += '<div><span style="color:var(--primary);font-weight:600;">' + tipoLabel + '</span><br><span style="font-size:11px;color:var(--text-muted);">' + dataStr + '</span></div>';
+                html += '<div style="display:flex;gap:5px;">';
+                html += '<button class="btn btn-sm btn-success" onclick="verPdfHistorico(' + idx + ',' + i + ')">Ver</button>';
+                html += '<button class="btn btn-sm btn-danger" onclick="excluirPdf(' + idx + ',' + i + ')">×</button>';
+                html += '</div></div>';
+            });
+            
+            html += '<button class="btn" onclick="fecharModal()" style="margin-top:10px;width:100%;">Fechar</button>';
+            html += '</div>';
+            
+            document.getElementById('docLaudo').innerHTML = html;
+            document.getElementById('modalTitulo').textContent = 'Histórico';
+            document.getElementById('docLaudo').classList.remove('hidden');
+            document.getElementById('docResumo').classList.add('hidden');
+            document.getElementById('docWhatsapp').classList.add('hidden');
+            document.querySelectorAll('.modal .tab').forEach(t => t.classList.add('hidden'));
+            document.getElementById('modalPreview').classList.add('active');
+            window.modoHistorico = true;
+        }
+
+        function verPdfHistorico(idx, pdfIdx) {
+            const c = clientes[idx];
+            const pdf = c.historicoPdfs[pdfIdx];
+            document.getElementById('modalTitulo').textContent = pdf.tipo === 'orcamento' ? 'Orçamento' : 'Laudo Final';
+            document.getElementById('docLaudo').innerHTML = pdf.html;
+            document.getElementById('docLaudo').classList.remove('hidden');
+            document.getElementById('docResumo').classList.add('hidden');
+            document.getElementById('docWhatsapp').classList.add('hidden');
+            document.querySelectorAll('.modal .tab').forEach(t => t.classList.remove('hidden'));
+            window.modoHistorico = true;
+        }
+
+        function excluirPdf(idx, pdfIdx) {
+            if (confirm('Excluir este documento do histórico?')) {
+                clientes[idx].historicoPdfs.splice(pdfIdx, 1);
+                salvarDados();
+                verHistorico(idx);
+            }
+        }
+
+        function autoSalvar() {
+            const c = clientes[clienteAtual];
+            document.querySelectorAll('.item-row').forEach((row, i) => {
+                c.itens[i].nome = row.querySelector('input').value;
+                c.itens[i].obs = row.querySelector('textarea').value;
+            });
+            c.servicos = [];
+            document.querySelectorAll('#servicesGrid input:checked').forEach(cb => c.servicos.push(cb.value));
+            const outros = document.getElementById('outrosServicos').value;
+            if (outros) c.servicos.push(outros);
+            c.garantia = document.getElementById('laudoGarantia').value;
+            c.proxima = document.getElementById('laudoProxima').value;
+            c.obs = document.getElementById('laudoObs').value;
+            c.ultimaAtt = new Date().toISOString();
+            salvarDados();
+            mostrarMsgSalvo();
+        }
+
+        function salvarDados() {
+            localStorage.setItem('clientes_' + usuarioAtual.email, JSON.stringify(clientes));
+        }
+
+        function mostrarMsgSalvo() {
+            const msg = document.getElementById('autoSaveMsg');
+            msg.classList.add('show');
+            setTimeout(() => msg.classList.remove('show'), 1500);
+        }
+
+        function mudarAba(aba) {
+            ['itens', 'servicos', 'garantia'].forEach(a => {
+                document.getElementById('aba-' + a).classList.toggle('hidden', a !== aba);
+                document.querySelector(`.tab[onclick="mudarAba('${a}')"]`).classList.toggle('active', a === aba);
+            });
+        }
+
+        function gerarLaudo(tipo) {
+            tipoLaudo = tipo;
+            autoSalvar();
+            document.getElementById('modalTitulo').textContent = tipo === 'orcamento' ? 'Orçamento' : 'Laudo Final';
+            gerarDocs();
+            document.getElementById('modalPreview').classList.add('active');
+        }
+
+        function gerarDocs() {
+            const c = clientes[clienteAtual];
+            const hoje = new Date();
+            const dataStr = ("0" + hoje.getDate()).slice(-2) + "/" + ("0" + (hoje.getMonth() + 1)).slice(-2) + "/" + hoje.getFullYear();
+            const dataExt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            const ok = c.itens.filter(i => i.status === 'ok');
+            const at = c.itens.filter(i => i.status === 'atencao');
+            const cr = c.itens.filter(i => i.status === 'critico');
+
+            let tabela = '<table><thead><tr><th>Item</th><th>Status</th><th>Observação</th></tr></thead><tbody>';
+            c.itens.forEach(item => {
+                let cls = item.status === 'ok' ? 'status-ok' : item.status === 'atencao' ? 'status-atencao' : 'status-critico';
+                let lbl = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : 'CRÍTICO';
+                tabela += `<tr><td>${item.nome || '-'}</td><td class="${cls}">${lbl}</td><td>${item.obs || '-'}</td></tr>`;
+            });
+            tabela += '</tbody></table>';
+
+            const urgentHtml = cr.length > 0 ? '<p class="urgente">⚠ ATENÇÃO URGENTE</p>' : '';
+            const servHtml = c.servicos.length > 0 ? '<ul>' + c.servicos.map(s => `<li>${s}</li>`).join('') + '</ul>' : '<p>-</p>';
+
+            const logoHtml = usuarioAtual.logo ? `<img src="${usuarioAtual.logo}" style="max-height: 60px; display: block; margin: 0 auto 10px;">` : '';
+            const docLaudo = `
+                ${logoHtml}
+                <h1>${usuarioAtual.nome}</h1>
+                <p style="text-align:center;color:#666">${tipoLaudo === 'orcamento' ? 'ORÇAMENTO / DIAGNÓSTICO' : 'LAUDO DE SERVIÇO'}</p>
+                <h2>Dados do Veículo</h2>
+                <table>
+                    <tr><td style="width:30%"><strong>Cliente:</strong></td><td>${c.nome}</td></tr>
+                    <tr><td><strong>Veículo:</strong></td><td>${c.veiculo}</td></tr>
+                    <tr><td><strong>Placa:</strong></td><td>${c.placa || '-'}</td></tr>
+                    <tr><td><strong>Ano:</strong></td><td>${c.ano || '-'}</td></tr>
+                    <tr><td><strong>Km:</strong></td><td>${c.km || '-'}</td></tr>
+                    <tr><td><strong>Data:</strong></td><td>${dataStr}</td></tr>
+                </table>
+                <h2>Itens Inspectados</h2>
+                ${tabela}
+                ${urgentHtml}
+                <h2>Serviços ${tipoLaudo === 'orcamento' ? 'Recomendados' : 'Executados'}</h2>
+                ${servHtml}
+                <h2>Garantia</h2>
+                <p><strong>Garantia:</strong> ${c.garantia || '-'}</p>
+                <p><strong>Próxima revisão:</strong> ${c.proxima || '-'}</p>
+                ${c.obs ? '<h2>Observações</h2><p>' + c.obs + '</p>' : ''}
+                <div class="assinatura">
+                    <p style="color:#666">${dataExt}</p>
+                    <div class="linha"></div>
+                    <p>${usuarioAtual.nome}</p>
+                    <p style="color:#666;font-size:10px">Responsável Técnico</p>
+                </div>
+            `;
+
+            document.getElementById('docLaudo').innerHTML = docLaudo;
+
+            let resumo = `<h1 style="font-size:16px">Resumo - ${usuarioAtual.nome}</h1>`;
+            if (cr.length > 0) resumo += `<p class="urgente">⚠ URGENTE: ${cr.map(i => i.nome).join(', ')}</p>`;
+            if (at.length > 0) resumo += `<p style="background:#ffc;padding:8px">Atenção: ${at.map(i => i.nome).join(', ')}</p>`;
+            if (ok.length > 0) resumo += `<p style="background:#efe;padding:8px">OK: ${ok.map(i => i.nome).join(', ')}</p>`;
+            if (c.servicos.length > 0) resumo += `<p><strong>Serviços:</strong> ${c.servicos.join(', ')}</p>`;
+            resumo += `<p><strong>Próxima revisão:</strong> ${c.proxima || '-'}</p>`;
+
+            document.getElementById('docResumo').innerHTML = resumo;
+
+            let saud = c.nome ? `Olá ${c.nome}! Aqui é da ${usuarioAtual.nome}.` : `Olá! Aqui é da ${usuarioAtual.nome}.`;
+            let corpo = '';
+            
+            if (tipoLaudo === 'orcamento') {
+                corpo = saud + '\n\n';
+                corpo += '📋 Segue abaixo o orçamento detalhado do seu veículo:\n\n';
+                if (c.servicos.length > 0) {
+                    corpo += 'Serviços identificados:\n' + c.servicos.map(s => '• ' + s).join('\n') + '\n\n';
+                }
+                if (cr.length > 0) {
+                    corpo += '⚠️ ITENS URGENTES que precisam de atenção:\n' + cr.map(i => '• ' + i.nome + (i.obs ? ' - ' + i.obs : '')).join('\n') + '\n\n';
+                }
+                if (at.length > 0) {
+                    corpo += '🔔 ITENS PARA ATENÇÃO (recomendamos resolver em breve):\n' + at.map(i => '• ' + i.nome).join('\n') + '\n\n';
+                }
+                corpo += 'Aguardamos sua aprovação para iniciarmos os serviços.\n\n';
+                corpo += 'Qualquer dúvida, estou à disposição!\n\n';
+                corpo += `${usuarioAtual.nome}\n${usuarioAtual.whatsapp || ''}`;
+            } else {
+                corpo = saud + '\n\n';
+                corpo += '✅ Seu veículo está PRONTO!\n\n';
+                corpo += '🔧 Serviços realizados:\n' + c.servicos.map(s => '• ' + s).join('\n') + '\n\n';
+                if (ok.length > 0) {
+                    corpo += '✓ Itens verificados e aprovado: ' + ok.map(i => i.nome).join(', ') + '\n\n';
+                }
+                if (cr.length > 0) {
+                    corpo += '⚠️ Items corrigidos (urgentes): ' + cr.map(i => i.nome).join(', ') + '\n\n';
+                }
+                if (c.garantia) {
+                    corpo += '🛡️ Garantia: ' + c.garantia + '\n';
+                }
+                if (c.proxima) {
+                    corpo += '📅 Próxima revisão recomendada: ' + c.proxima + '\n\n';
+                }
+                corpo += 'Agradecemos a confiança! Retire seu veículo quando preferir.\n\n';
+                corpo += `${usuarioAtual.nome}\n${usuarioAtual.whatsapp || ''}`;
+            }
+
+            document.getElementById('waPreview').innerHTML = corpo.replace(/\n/g, '<br>');
+
+            let tel = (c.whatsapp || '').replace(/\D/g, '');
+            const pdfData = { tipo: tipoLaudo, data: new Date().toISOString(), html: docLaudo };
+            if (!clientes[clienteAtual].historicoPdfs) clientes[clienteAtual].historicoPdfs = [];
+            clientes[clienteAtual].historicoPdfs.push(pdfData);
+            window.pdfSalvo = pdfData;
+            salvarDados();
+            
+            whatsappLink = tel ? 'https://wa.me/55' + tel + '?text=' + encodeURIComponent(corpo) : '';
+        }
+
+        function mostrarDocAba(aba) {
+            ['docLaudo', 'docResumo', 'docWhatsapp'].forEach(a => {
+                document.getElementById(a).classList.toggle('hidden', a !== aba);
+                document.querySelector(`.tab[onclick="mostrarDocAba('${a}')"]`).classList.toggle('active', a === aba);
+            });
+        }
+
+        function enviarWhatsApp() {
+            if (!whatsappLink) {
+                alert('Informe o WhatsApp do cliente');
+                return;
+            }
+            if (confirm('Deseja gerar o PDF agora?')) {
+                imprimirDoc();
+            }
+            setTimeout(() => {
+                window.open(whatsappLink, '_blank');
+            }, 500);
+        }
+
+        function fecharModal() {
+            document.getElementById('modalPreview').classList.remove('active');
+            if (window.modoHistorico) {
+                window.modoHistorico = false;
+                document.querySelectorAll('.modal .tab').forEach(t => t.classList.remove('hidden'));
+                document.getElementById('docLaudo').classList.remove('hidden');
+                document.getElementById('docResumo').classList.add('hidden');
+                document.getElementById('docWhatsapp').classList.add('hidden');
+                document.querySelector('.modal .tab.active')?.classList.remove('active');
+                document.querySelector('.modal .tab:first-child')?.classList.add('active');
+            }
+        }
+
+        function imprimirDoc() {
+            const html = document.getElementById('docLaudo').innerHTML;
+            const style = '<style>body{font-family:Arial;padding:15px;font-size:11px}h1{text-align:center}h2{background:#eee;padding:5px;margin:10px 0}table{width:100%}th{background:#333;color:#fff;padding:5px}td{padding:4px;border:1px solid #ccc}.status-ok{color:green}.status-atencao{color:#ca8}.status-critico{color:red}.urgente{background:#fee;padding:8px}.assinatura{text-align:right;margin-top:30px}.linha{border-bottom:1px solid #333;width:150px;display:inline-block}</style>';
+            const w = window.open('', '_blank');
+            w.document.write('<html><head><title>Documento</title>' + style + '</head><body>' + html + '</body></html>');
+            w.document.close();
+            setTimeout(() => w.print(), 300);
+        }
+
+        init();
+    </script>
+</body>
+</html>
