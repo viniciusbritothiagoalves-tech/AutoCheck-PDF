@@ -55,14 +55,14 @@
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
         
-        .input-senha { position: relative; }
-        .input-senha input { width: 100%; padding-right: 40px; }
+        .input-senha { position: relative; display: flex; align-items: center; }
+        .input-senha input { width: 100%; padding-right: 40px; padding-top: 14px; padding-bottom: 14px; height: auto; }
         .input-senha .toggle-senha {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 14px; padding: 0;
-            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            position: absolute; right: 10px;
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+            width: 24px; height: 100%; display: flex; align-items: center; justify-content: center;
         }
-        .input-senha .toggle-senha svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .input-senha .toggle-senha svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
         
         .btn { background: var(--primary); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-size: calc(15px * var(--scale)); font-weight: 600; cursor: pointer; }
         .btn:hover { background: var(--primary-dark); }
@@ -160,7 +160,6 @@
     <div id="loginScreen" class="container" style="max-width: 400px; padding-top: 50px;">
         <div class="logo-area">
             <h1>AutoCheck <span>PDF</span></h1>
-            <p>🔧 Sistema de Gestão para Oficinas</p>
         </div>
         <div class="card">
             <h2 style="text-align: center; color: var(--branco); margin-bottom: 20px;">Entrar</h2>
@@ -398,7 +397,7 @@
             </div>
         </div>
         
-        <button class="btn btn-block" onclick="voltarDashboard()" style="max-width: 300px; margin: 0 auto; background: var(--bg-input);">← Voltar ao Dashboard</button>
+        <button class="btn btn-block" onclick="voltarDaTelaPlanos()" style="max-width: 300px; margin: 0 auto; background: var(--bg-input);">← Voltar</button>
     </div>
 
     <div id="editarPerfilScreen" class="container hidden" style="max-width: 400px; padding-top: 30px;">
@@ -823,10 +822,17 @@
             document.getElementById('editarPerfilScreen').classList.add('hidden');
             document.getElementById('planosScreen').querySelector('.logo-area p').textContent = 'Escolha o plano ideal para sua oficina';
             atualizarVisualizacaoPlanos();
-            document.getElementById('mainApp').classList.add('hidden');
-            document.getElementById('planosScreen').classList.remove('hidden');
-            document.getElementById('planosScreen').querySelector('.logo-area p').textContent = 'Escolha o plano ideal para sua oficina';
-            atualizarVisualizacaoPlanos();
+        }
+
+        function voltarDaTelaPlanos() {
+            if (usuarioAtual) {
+                document.getElementById('planosScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                verificarPagamento();
+            } else {
+                document.getElementById('planosScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            }
         }
 
         function atualizarVisualizacaoPlanos() {
@@ -1101,6 +1107,43 @@
                 usuarioAtual = adminMaster;
                 salvarSessao();
                 mostrarDashboardAdmin();
+                return;
+            }
+
+            if (email === 'teste@autochecksistema.com' && senha === 'AutoCheck2024Teste!') {
+                const usuarioTeste = {
+                    nome: '🔧 Usuário Teste',
+                    email: 'teste@autochecksistema.com',
+                    senha: 'AutoCheck2024Teste!',
+                    plano: 'master',
+                    pago: true,
+                    admin: false,
+                    whatsapp: '',
+                    pergunta: '',
+                    resposta: '',
+                    dataCadastro: new Date().toISOString(),
+                    pdfsUsados: 0
+                };
+                
+                let idx = usuarios.findIndex(u => u.email === 'teste@autochecksistema.com');
+                if (idx === -1) {
+                    usuarios.push(usuarioTeste);
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                } else {
+                    usuarios[idx].pago = true;
+                    usuarios[idx].plano = 'master';
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                }
+                
+                usuarioAtual = usuarioTeste;
+                const dadosCli = localStorage.getItem('clientes_teste@autochecksistema.com');
+                clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('nomeUsuario').textContent = '🔧 Usuário Teste';
+                document.getElementById('adminPanel').classList.add('hidden');
+                salvarSessao();
+                verificarPagamento();
                 return;
             }
 
