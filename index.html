@@ -771,8 +771,15 @@
                     usuarioAtual = user;
                     usuarioPago = user.pago === true;
                     
-                    const dadosCli = localStorage.getItem('clientes_' + userEmail);
-                    clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                    clientes = [];
+                    const dadosCli = localStorage.getItem('clientes_' + user.email);
+                    if (dadosCli) {
+                        try {
+                            clientes = JSON.parse(dadosCli);
+                        } catch(e) {
+                            clientes = [];
+                        }
+                    }
                     
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('mainApp').classList.remove('hidden');
@@ -1157,14 +1164,15 @@
                 if (idx === -1) {
                     usuarios.push(usuarioTeste);
                     localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                    idx = usuarios.length - 1;
                 } else {
                     usuarios[idx].pago = true;
                     usuarios[idx].plano = 'master';
                     localStorage.setItem('usuarios', JSON.stringify(usuarios));
                 }
                 
-                usuarioAtual = usuarioTeste;
-                const dadosCli = localStorage.getItem('clientes_teste@autochecksistema.com');
+                usuarioAtual = usuarios[idx];
+                const dadosCli = localStorage.getItem('clientes_' + usuarioAtual.email);
                 clientes = dadosCli ? JSON.parse(dadosCli) : [];
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
@@ -1194,14 +1202,15 @@
                 if (idx === -1) {
                     usuarios.push(usuarioPro);
                     localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                    idx = usuarios.length - 1;
                 } else {
                     usuarios[idx].pago = true;
                     usuarios[idx].plano = 'pro';
                     localStorage.setItem('usuarios', JSON.stringify(usuarios));
                 }
                 
-                usuarioAtual = usuarioPro;
-                const dadosCli = localStorage.getItem('clientes_profissional@autochecksistema.com');
+                usuarioAtual = usuarios[idx];
+                const dadosCli = localStorage.getItem('clientes_' + usuarioAtual.email);
                 clientes = dadosCli ? JSON.parse(dadosCli) : [];
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
@@ -1215,8 +1224,15 @@
             usuarioAtual = usuarios.find(u => u.email === email && u.senha === senha);
 
             if (usuarioAtual) {
+                clientes = [];
                 const dadosCli = localStorage.getItem('clientes_' + email);
-                clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                if (dadosCli) {
+                    try {
+                        clientes = JSON.parse(dadosCli);
+                    } catch(e) {
+                        clientes = [];
+                    }
+                }
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
                 document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
