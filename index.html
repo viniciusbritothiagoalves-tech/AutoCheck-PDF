@@ -747,6 +747,12 @@
             
             try {
                 const dadosSessao = JSON.parse(sessaoSalva);
+                if (!dadosSessao || !dadosSessao.email || !dadosSessao.senha) {
+                    localStorage.removeItem('sessaoUsuario');
+                    mostrarLogin();
+                    return;
+                }
+                
                 const userEmail = dadosSessao.email;
                 const userSenha = dadosSessao.senha;
                 
@@ -790,12 +796,15 @@
                     verificarPagamento();
                     renderizarClientes();
                     setupInactivityTracker();
-                    return;
+                } else {
+                    localStorage.removeItem('sessaoUsuario');
+                    mostrarLogin();
                 }
             } catch(e) {
                 console.log('Erro ao restaurar sessao:', e);
+                localStorage.removeItem('sessaoUsuario');
+                mostrarLogin();
             }
-            mostrarLogin();
         }
 
         window.addEventListener('storage', function(e) {
@@ -922,7 +931,8 @@
         }
 
         function temPermissao(funcionalidade) {
-            if (!usuarioAtual || !usuarioAtual.pago || !usuarioAtual.plano) return false;
+            if (!usuarioAtual || !usuarioAtual.pago) return false;
+            if (!usuarioAtual.plano) return false;
             return funcionalidades[usuarioAtual.plano]?.[funcionalidade] || false;
         }
 
@@ -1744,7 +1754,9 @@
         }
 
         function salvarDados() {
-            localStorage.setItem('clientes_' + usuarioAtual.email, JSON.stringify(clientes));
+            if (usuarioAtual && usuarioAtual.email) {
+                localStorage.setItem('clientes_' + usuarioAtual.email, JSON.stringify(clientes));
+            }
         }
 
         function mostrarMsgSalvo() {
