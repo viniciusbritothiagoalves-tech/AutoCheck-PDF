@@ -740,9 +740,15 @@
 
         function restaurarSessao() {
             const sessaoSalva = localStorage.getItem('sessaoUsuario');
-            if (sessaoSalva) {
+            if (!sessaoSalva) {
+                mostrarLogin();
+                return;
+            }
+            
+            try {
                 const dadosSessao = JSON.parse(sessaoSalva);
                 const userEmail = dadosSessao.email;
+                const userSenha = dadosSessao.senha;
                 
                 if (userEmail === 'admin@autocheck.com') {
                     usuarioAtual = adminMaster;
@@ -758,12 +764,13 @@
                     return;
                 }
                 
+                usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
                 const user = usuarios.find(u => u.email === userEmail);
-                if (user && user.senha === dadosSessao.senha) {
+                
+                if (user && user.senha === userSenha) {
                     usuarioAtual = user;
                     usuarioPago = user.pago === true;
                     
-                    clientes = [];
                     const dadosCli = localStorage.getItem('clientes_' + user.email);
                     if (dadosCli) {
                         try {
@@ -771,6 +778,8 @@
                         } catch(e) {
                             clientes = [];
                         }
+                    } else {
+                        clientes = [];
                     }
                     
                     document.getElementById('loginScreen').classList.add('hidden');
@@ -783,9 +792,37 @@
                     setupInactivityTracker();
                     return;
                 }
+            } catch(e) {
+                console.log('Erro ao restaurar sessao:', e);
             }
             mostrarLogin();
         }
+
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'sessaoUsuario') {
+                if (!e.newValue) {
+                    const sessaoAtual = localStorage.getItem('sessaoUsuario');
+                    if (!sessaoAtual) {
+                        logout();
+                    }
+                } else if (e.oldValue && !e.newValue) {
+                    logout();
+                }
+            }
+            if (e.key && e.key.startsWith('clientes_')) {
+                if (usuarioAtual) {
+                    const dadosCli = localStorage.getItem('clientes_' + usuarioAtual.email);
+                    if (dadosCli) {
+                        try {
+                            clientes = JSON.parse(dadosCli);
+                            if (document.getElementById('mainApp') && !document.getElementById('mainApp').classList.contains('hidden')) {
+                                renderizarClientes();
+                            }
+                        } catch(err) {}
+                    }
+                }
+            }
+        });
 
         function salvarSessao() {
             if (usuarioAtual) {
