@@ -42,6 +42,10 @@
         .logo-area h1 span { color: var(--vermelho); }
         .logo-area p { color: var(--text-muted); font-size: calc(16px * var(--scale)); margin-top: 8px; }
         
+        .tool-logo { position: fixed; top: 15px; right: 15px; z-index: 50; opacity: 0.6; transition: opacity 0.3s; }
+        .tool-logo:hover { opacity: 1; }
+        .tool-logo img { max-height: 40px; max-width: 120px; object-fit: contain; }
+        
         .card { background: var(--bg-card); border-radius: 12px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); }
         
         .card-title { font-size: calc(22px * var(--scale)); font-weight: 600; margin-bottom: 20px; color: var(--branco); }
@@ -155,8 +159,21 @@
             .client-item { flex-direction: column; gap: 10px; align-items: flex-start; }
         }
     </style>
+    <div id="toolLogo" class="tool-logo" style="display: none;"></div>
 </head>
 <body>
+    <script>
+        (function() {
+            var logoPath = 'autochek-logo.png';
+            var img = new Image();
+            img.onload = function() {
+                document.getElementById('toolLogo').innerHTML = '<img src="' + logoPath + '" alt="AutoCheck PDF">';
+                document.getElementById('toolLogo').style.display = 'block';
+            };
+            img.onerror = function() {};
+            img.src = logoPath;
+        })();
+    </script>
     <div id="loginScreen" class="container" style="max-width: 400px; padding-top: 50px;">
         <div class="logo-area">
             <h1>AutoCheck <span>PDF</span></h1>
@@ -420,8 +437,21 @@
                 <input type="tel" id="editWhatsapp" placeholder="(11) 99999-9999">
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
+                <label>Logo da Oficina (aparece nos PDFs)</label>
+                <input type="file" id="editLogo" accept="image/*" onchange="previewLogo(this)" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); width: 100%;">
+                <div id="logoPreview" style="margin-top: 10px;"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
                 <label>Seu Plano</label>
                 <div id="planoAtualDisplay" style="background: var(--bg-input); padding: 12px; border-radius: 8px; color: var(--branco); font-weight: 600;"></div>
+            </div>
+            <div class="form-group" id="testePlanoGroup" style="margin-bottom: 20px; display: none;">
+                <label>Testar Plano (usuários teste)</label>
+                <select id="testePlanoSelect" onchange="trocarPlanoTeste(this.value)" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); width: 100%;">
+                    <option value="basico">Básico - 1 dispositivo</option>
+                    <option value="pro">Profissional - 3 dispositivos</option>
+                    <option value="master">Gold - 5+ dispositivos</option>
+                </select>
             </div>
             <button class="btn btn-success btn-block" onclick="salvarEdicaoPerfil()">Salvar Alterações</button>
             <button class="btn btn-block" onclick="mostrarClientes()" style="margin-top: 10px;">Voltar</button>
@@ -1225,20 +1255,55 @@
             document.getElementById('editSenha').value = '';
             document.getElementById('editWhatsapp').value = usuarioAtual.whatsapp || '';
             
+            if (usuarioAtual.logo) {
+                document.getElementById('logoPreview').innerHTML = '<img src="' + usuarioAtual.logo + '" style="max-width: 150px; max-height: 80px; border-radius: 8px;">';
+            } else {
+                document.getElementById('logoPreview').innerHTML = '';
+            }
+            
             const planoTxt = usuarioAtual.plano === 'basico' ? 'Básico - 1 dispositivo (R$ 97,00)' : 
                             usuarioAtual.plano === 'pro' ? 'Profissional - 3 dispositivos (R$ 147,00)' : 
                             usuarioAtual.plano === 'master' ? 'Gold - 5+ dispositivos (R$ 197,00)' : 'Não contratado';
             document.getElementById('planoAtualDisplay').textContent = planoTxt;
+            
+            if (usuarioAtual.email === 'teste@autochecksistema.com') {
+                document.getElementById('testePlanoGroup').style.display = 'block';
+                document.getElementById('testePlanoSelect').value = usuarioAtual.plano || 'master';
+            } else {
+                document.getElementById('testePlanoGroup').style.display = 'none';
+            }
             
             document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('planosScreen').classList.add('hidden');
             document.getElementById('editarPerfilScreen').classList.remove('hidden');
         }
 
+        function trocarPlanoTeste(novoPlano) {
+            usuarioAtual.plano = novoPlano;
+            const idx = usuarios.findIndex(u => u.email === usuarioAtual.email);
+            if (idx !== -1) {
+                usuarios[idx].plano = novoPlano;
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            }
+            verificarPagamento();
+            alert('Plano alterado para teste! Funcionalidades atualizadas.');
+        }
+
+        function previewLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoPreview').innerHTML = '<img src="' + e.target.result + '" style="max-width: 150px; max-height: 80px; border-radius: 8px;">';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function salvarEdicaoPerfil() {
             const nome = document.getElementById('editNome').value;
             const novaSenha = document.getElementById('editSenha').value;
             const whatsapp = document.getElementById('editWhatsapp').value;
+            const logoInput = document.getElementById('editLogo');
             
             if (!nome) {
                 alert('Informe o nome da oficina');
@@ -1254,14 +1319,29 @@
                 usuarioAtual.senha = novaSenha;
             }
             
+            if (logoInput.files && logoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    usuarioAtual.logo = e.target.result;
+                    salvarDadosPerfil(nome, whatsapp, novaSenha, e.target.result);
+                };
+                reader.readAsDataURL(logoInput.files[0]);
+            } else {
+                salvarDadosPerfil(nome, whatsapp, novaSenha, null);
+            }
+        }
+
+        function salvarDadosPerfil(nome, whatsapp, novaSenha, logo) {
             usuarioAtual.nome = nome;
             usuarioAtual.whatsapp = whatsapp;
+            if (logo) usuarioAtual.logo = logo;
             
             const idx = usuarios.findIndex(u => u.email === usuarioAtual.email);
             if (idx !== -1) {
                 usuarios[idx].nome = nome;
                 usuarios[idx].whatsapp = whatsapp;
                 if (novaSenha) usuarios[idx].senha = novaSenha;
+                if (logo) usuarios[idx].logo = logo;
                 localStorage.setItem('usuarios', JSON.stringify(usuarios));
             }
             
@@ -1622,141 +1702,207 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            const logoImg = new Image();
-            let hasLogo = false;
-            
+            const c = clientes[clienteAtual];
             let y = 20;
+            
+            doc.setDrawColor(220, 38, 38);
+            doc.setLineWidth(1);
+            doc.line(10, 10, 200, 10);
+            doc.line(10, 287, 200, 287);
             
             if (usuarioAtual.logo) {
                 try {
-                    logoImg.src = usuarioAtual.logo;
-                    doc.addImage(usuarioAtual.logo, 'JPEG', 90, 10, 30, 30);
-                    y = 50;
-                } catch(e) {
-                    y = 20;
-                }
+                    doc.addImage(usuarioAtual.logo, 'PNG', 15, 15, 25, 25);
+                } catch(e) {}
             }
             
-            doc.setFontSize(16);
+            doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
-            doc.text(usuarioAtual.nome, 105, y, { align: 'center' });
-            y += 8;
+            doc.setTextColor(220, 38, 38);
+            doc.text(usuarioAtual.nome, 105, 25, { align: 'center' });
             
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.text(tipo === 'orcamento' ? 'RELATÓRIO DE AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO', 105, y, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setTextColor(100, 100, 100);
+            doc.text(tipo === 'orcamento' ? 'RELATÓRIO DE AVALIAÇÃO TÉCNICA' : 'CERTIFICADO DE CONCLUSÃO DE SERVIÇOS', 105, 32, { align: 'center' });
+            
+            y = 50;
+            
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(12, y, 186, 10, 2, 2, 'F');
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(50, 50, 50);
+            doc.text('DADOS DO VEÍCULO', 15, y + 7);
             y += 15;
             
-            doc.setFontSize(10);
-            doc.text('Dados do Veículo', 14, y);
-            doc.setFillColor(240, 240, 240);
-            doc.rect(14, y + 2, 182, 8, 'F');
-            y += 12;
-            
-            const c = clientes[clienteAtual];
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
             const dados = [
-                ['Cliente:', c.nome],
-                ['Veículo:', c.veiculo],
-                ['Placa:', c.placa || '-'],
-                ['Ano:', c.ano || '-'],
-                ['Km:', c.km || '-'],
-                ['Data:', new Date().toLocaleDateString('pt-BR')]
+                ['Cliente:', c.nome, 'Placa:', c.placa || '-'],
+                ['Veículo:', c.veiculo, 'Ano:', c.ano || '-'],
+                ['Km Atual:', c.km || '-', 'Data:', new Date().toLocaleDateString('pt-BR')]
             ];
             
-            dados.forEach(([label, valor]) => {
+            dados.forEach(linha => {
                 doc.setFont('helvetica', 'bold');
-                doc.text(label, 14, y);
+                doc.text(linha[0], 15, y);
                 doc.setFont('helvetica', 'normal');
-                doc.text(valor, 50, y);
+                doc.text(linha[1], 45, y);
+                doc.setFont('helvetica', 'bold');
+                doc.text(linha[2], 110, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(linha[3], 135, y);
                 y += 6;
             });
-            y += 5;
+            y += 8;
             
-            doc.text('Itens Inspectados', 14, y);
-            doc.setFillColor(240, 240, 240);
-            doc.rect(14, y + 2, 182, 8, 'F');
-            y += 12;
-            
-            const headers = ['Item', 'Status', 'Observação'];
-            const colWidths = [60, 30, 96];
-            let x = 14;
-            
+            doc.setFillColor(220, 38, 38);
+            doc.roundedRect(12, y, 186, 10, 2, 2, 'F');
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.setFillColor(26, 26, 46);
-            doc.rect(14, y - 4, 182, 8, 'F');
             doc.setTextColor(255, 255, 255);
-            headers.forEach((h, i) => {
-                doc.text(h, x + colWidths[i]/2, y, { align: 'center' });
-                x += colWidths[i];
-            });
-            y += 6;
-            doc.setTextColor(0, 0, 0);
+            doc.text('ITENS INSPECTADOS', 15, y + 7);
+            y += 15;
             
-            c.itens.forEach(item => {
-                if (y > 270) {
+            const headers = ['ITEM', 'STATUS', 'OBSERVAÇÃO'];
+            const colWidths = [55, 30, 101];
+            
+            doc.setFillColor(30, 30, 30);
+            doc.rect(12, y, 186, 7, 'F');
+            doc.setTextColor(255, 255, 255);
+            let xPos = 15;
+            headers.forEach((h, i) => {
+                doc.text(h, xPos + colWidths[i]/2, y + 5, { align: 'center' });
+                xPos += colWidths[i];
+            });
+            y += 10;
+            
+            c.itens.forEach((item, idx) => {
+                if (y > 265) {
                     doc.addPage();
+                    doc.setDrawColor(220, 38, 38);
+                    doc.setLineWidth(1);
+                    doc.line(10, 10, 200, 10);
+                    doc.line(10, 287, 200, 287);
                     y = 20;
                 }
                 
+                if (idx % 2 === 0) {
+                    doc.setFillColor(250, 250, 250);
+                    doc.rect(12, y - 4, 186, 8, 'F');
+                }
+                
                 doc.setFont('helvetica', 'normal');
-                x = 14;
-                doc.text(item.nome || '-', x + 30, y, { align: 'center' });
-                x += colWidths[0];
+                doc.setFontSize(8);
+                doc.setTextColor(50, 50, 50);
+                xPos = 15;
+                doc.text(item.nome || '-', xPos + 27.5, y, { align: 'center' });
+                xPos += colWidths[0];
                 
                 if (item.status === 'ok') {
                     doc.setTextColor(22, 163, 74);
-                    doc.text('OK', x + 15, y, { align: 'center' });
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('✓ OK', xPos + 15, y, { align: 'center' });
                 } else if (item.status === 'atencao') {
                     doc.setTextColor(202, 138, 4);
-                    doc.text('ATENÇÃO', x + 15, y, { align: 'center' });
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('⚠ ATENÇÃO', xPos + 15, y, { align: 'center' });
                 } else {
                     doc.setTextColor(220, 38, 38);
-                    doc.text('CRÍTICO', x + 15, y, { align: 'center' });
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('✖ CRÍTICO', xPos + 15, y, { align: 'center' });
                 }
-                doc.setTextColor(0, 0, 0);
-                x += colWidths[1];
+                xPos += colWidths[1];
                 
-                doc.text(item.obs || '-', x + 48, y, { align: 'center' });
-                y += 7;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text(item.obs || '-', xPos + 50, y, { align: 'center' });
+                y += 8;
             });
-            y += 10;
+            y += 5;
             
             const cr = c.itens.filter(i => i.status === 'critico');
             if (cr.length > 0) {
-                doc.setFillColor(254, 238, 238);
+                doc.setFillColor(254, 226, 226);
+                doc.roundedRect(12, y, 186, 8, 1, 1, 'F');
+                doc.setFontSize(9);
                 doc.setTextColor(220, 38, 38);
                 doc.setFont('helvetica', 'bold');
-                doc.rect(14, y, 182, 10, 'F');
-                doc.text('⚠ ATENÇÃO URGENTE - Reparo Necessário', 105, y + 7, { align: 'center' });
-                doc.setTextColor(0, 0, 0);
-                y += 15;
+                doc.text('⚠ ATENÇÃO URGENTE: Os itens marcados como CRÍTICO precisam de reparo imediato!', 15, y + 5);
+                y += 12;
             }
             
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(12, y, 186, 10, 2, 2, 'F');
             doc.setFontSize(10);
-            doc.text('Serviços ' + (tipo === 'orcamento' ? 'Identificados' : 'Realizados'), 14, y);
-            doc.setFillColor(240, 240, 240);
-            doc.rect(14, y + 2, 182, 8, 'F');
-            y += 12;
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(50, 50, 50);
+            doc.text('SERVIÇOS ' + (tipo === 'orcamento' ? 'IDENTIFICADOS' : 'REALIZADOS'), 15, y + 7);
+            y += 15;
             
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
             if (c.servicos.length > 0) {
                 c.servicos.forEach(s => {
-                    doc.text('• ' + s, 14, y);
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(14, y - 3, 4, 4, 'F');
+                    doc.text('• ' + s, 20, y);
                     y += 6;
                 });
             } else {
-                doc.text('-', 14, y);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Nenhum serviço registrado', 15, y);
                 y += 6;
             }
-            y += 10;
+            y += 8;
             
-            doc.text('Garantia e Observações', 14, y);
-            doc.setFillColor(240, 240, 240);
-            doc.rect(14, y + 2, 182, 8, 'F');
-            y += 12;
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(12, y, 186, 10, 2, 2, 'F');
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(50, 50, 50);
+            doc.text('GARANTIA E INFORMAÇÕES', 15, y + 7);
+            y += 15;
+            
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Garantia:', 15, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(c.garantia || 'Não especificada', 40, y);
+            y += 6;
             
             doc.setFont('helvetica', 'bold');
-            doc.text('Garantia: ', 14, y);
+            doc.text('Próxima Revisão:', 15, y);
             doc.setFont('helvetica', 'normal');
+            doc.text(c.proxima || 'Não especificada', 50, y);
+            y += 8;
+            
+            if (c.obs) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Observações:', 15, y);
+                y += 5;
+                doc.setFont('helvetica', 'normal');
+                const obsLines = doc.splitTextToSize(c.obs, 180);
+                obsLines.forEach(linha => {
+                    doc.text(linha, 15, y);
+                    y += 5;
+                });
+            }
+            
+            y += 10;
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Documento gerado em ' + new Date().toLocaleString('pt-BR'), 105, y, { align: 'center' });
+            
+            doc.setDrawColor(220, 38, 38);
+            doc.setLineWidth(0.5);
+            doc.line(60, y + 15, 150, y + 15);
+            doc.setFontSize(9);
+            doc.setTextColor(50, 50, 50);
+            doc.text(usuarioAtual.nome, 105, y + 22, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Responsável Técnico', 105, y + 28, { align: 'center' });
             doc.text(c.garantia || '-', 35, y);
             y += 6;
             
@@ -1799,17 +1945,22 @@
         }
 
         function enviarWhatsApp() {
+            const c = clientes[clienteAtual];
+            const nomeArquivo = 'AutoCheck_' + (tipoLaudo === 'orcamento' ? 'Avaliacao' : 'Certificado') + '_' + c.nome.replace(/\s+/g, '_') + '.pdf';
+            
             if (pdfBlob) {
                 const url = URL.createObjectURL(pdfBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'AutoCheck_' + tipoLaudo + '_' + Date.now() + '.pdf';
+                a.download = nomeArquivo;
                 a.click();
                 
+                const msg = `Cliente: ${c.nome}\nVeículo: ${c.veiculo}\nDocumento: ${nomeArquivo}`;
+                const waUrl = 'https://web.whatsapp.com/send?phone=' + c.whatsapp.replace(/\D/g, '') + '&text=' + encodeURIComponent(document.getElementById('waPreview').textContent);
+                
                 setTimeout(() => {
-                    window.open(whatsappLink, '_blank');
-                    alert('O PDF foi baixado. Agora você pode anexá-lo manualmente no WhatsApp!');
-                }, 1000);
+                    window.open(waUrl, '_blank');
+                }, 1500);
             } else {
                 window.open(whatsappLink, '_blank');
             }
