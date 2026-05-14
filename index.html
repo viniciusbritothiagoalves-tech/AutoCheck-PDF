@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoCheck PDF</title>
+    <link rel="icon" href="autochek-logo.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
@@ -1266,9 +1267,16 @@
                             usuarioAtual.plano === 'master' ? 'Gold - 5+ dispositivos (R$ 197,00)' : 'Não contratado';
             document.getElementById('planoAtualDisplay').textContent = planoTxt;
             
-            if (usuarioAtual.email === 'teste@autochecksistema.com') {
+            const isTeste = usuarioAtual.email === 'teste@autochecksistema.com' || 
+                          (usuarioAtual.nome && usuarioAtual.nome.includes('Teste'));
+            
+            if (isTeste) {
                 document.getElementById('testePlanoGroup').style.display = 'block';
-                document.getElementById('testePlanoSelect').value = usuarioAtual.plano || 'master';
+                const planoAtual = usuarioAtual.plano || 'master';
+                document.getElementById('testePlanoSelect').value = planoAtual;
+                document.getElementById('testePlanoSelect').onchange = function() {
+                    trocarPlanoTeste(this.value);
+                };
             } else {
                 document.getElementById('testePlanoGroup').style.display = 'none';
             }
