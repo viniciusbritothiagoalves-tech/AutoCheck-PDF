@@ -692,10 +692,21 @@
         }
 
         function init() {
-            renderizarServicos();
-            setupInactivityTracker();
-            restaurarSessao();
-            verificarMostrarAjuda();
+            console.log('[DEBUG] init() started, carregandoPagina:', carregandoPagina);
+            const sessaoAntes = localStorage.getItem('sessaoUsuario');
+            console.log('[DEBUG] sessao before restore:', sessaoAntes ? 'exists' : 'null');
+            
+            try {
+                restaurarSessao();
+                console.log('[DEBUG] after restaurarSessao, usuarioAtual:', usuarioAtual ? usuarioAtual.email : 'null');
+                
+                renderizarServicos();
+                setupInactivityTracker();
+                verificarMostrarAjuda();
+            } catch(e) {
+                console.error('[DEBUG] Erro no init:', e);
+                mostrarLogin();
+            }
         }
 
         function verificarMostrarAjuda() {
@@ -740,8 +751,13 @@
         }
 
         function restaurarSessao() {
+            console.log('[DEBUG] restaurarSessao started');
             const sessaoSalva = localStorage.getItem('sessaoUsuario');
+            console.log('[DEBUG] sessaoSalva:', sessaoSalva ? 'exists' : 'null');
+            
             if (!sessaoSalva) {
+                carregandoPagina = false;
+                console.log('[DEBUG] No session found, showing login');
                 mostrarLogin();
                 return;
             }
@@ -750,6 +766,7 @@
                 const dadosSessao = JSON.parse(sessaoSalva);
                 if (!dadosSessao || !dadosSessao.email || !dadosSessao.senha) {
                     localStorage.removeItem('sessaoUsuario');
+                    carregandoPagina = false;
                     mostrarLogin();
                     return;
                 }
@@ -801,14 +818,14 @@
                     carregandoPagina = false;
                 } else {
                     localStorage.removeItem('sessaoUsuario');
-                    mostrarLogin();
                     carregandoPagina = false;
+                    mostrarLogin();
                 }
             } catch(e) {
                 console.log('Erro ao restaurar sessao:', e);
                 localStorage.removeItem('sessaoUsuario');
-                mostrarLogin();
                 carregandoPagina = false;
+                mostrarLogin();
             }
         }
 
@@ -973,6 +990,8 @@
         }
 
         function verificarRetornoStripe() {
+            if (!carregandoPagina) return;
+            
             const urlParams = new URLSearchParams(window.location.search);
             const success = urlParams.get('success');
             const canceled = urlParams.get('canceled');
@@ -982,7 +1001,7 @@
                 localStorage.removeItem('planoPendente');
                 window.history.replaceState({}, document.title, window.location.pathname);
                 
-                if (success === 'true' && planoPendente) {
+                if (success === 'true' && planoPendente && usuarioAtual) {
                     usuarioAtual.pago = true;
                     usuarioAtual.plano = planoPendente;
                     
@@ -1008,9 +1027,7 @@
             return false;
         }
 
-        if (typeof retornoProcessado === 'undefined') {
-            setTimeout(verificarRetornoStripe, 500);
-        }
+        setTimeout(verificarRetornoStripe, 500);
 
         function mostrarLogin() {
             document.getElementById('loginScreen').classList.remove('hidden');
