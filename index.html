@@ -850,13 +850,19 @@
         }
 
         function voltarDaTelaPlanos() {
+            const planosScreen = document.getElementById('planosScreen');
+            const mainApp = document.getElementById('mainApp');
+            const loginScreen = document.getElementById('loginScreen');
+            
+            if (planosScreen) planosScreen.classList.add('hidden');
+            
             if (usuarioAtual) {
-                document.getElementById('planosScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                verificarPagamento();
+                if (mainApp) mainApp.classList.remove('hidden');
+                if (typeof verificarPagamento === 'function') {
+                    verificarPagamento();
+                }
             } else {
-                document.getElementById('planosScreen').classList.add('hidden');
-                document.getElementById('loginScreen').classList.remove('hidden');
+                if (loginScreen) loginScreen.classList.remove('hidden');
             }
         }
 
@@ -1365,11 +1371,19 @@
         }
 
         function mostrarClientes() {
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('formCliente').classList.add('hidden');
-            document.getElementById('formLaudo').classList.add('hidden');
-            document.getElementById('adminPanel').classList.add('hidden');
-            renderizarClientes();
+            const mainApp = document.getElementById('mainApp');
+            const formCliente = document.getElementById('formCliente');
+            const formLaudo = document.getElementById('formLaudo');
+            const adminPanel = document.getElementById('adminPanel');
+            
+            if (mainApp) mainApp.classList.remove('hidden');
+            if (formCliente) formCliente.classList.add('hidden');
+            if (formLaudo) formLaudo.classList.add('hidden');
+            if (adminPanel) adminPanel.classList.add('hidden');
+            
+            if (typeof renderizarClientes === 'function') {
+                renderizarClientes();
+            }
         }
 
         function renderizarClientes() {
@@ -1953,24 +1967,13 @@
         }
 
         function enviarWhatsApp() {
-            const c = clientes[clienteAtual];
-            const nomeArquivo = 'AutoCheck_' + (tipoLaudo === 'orcamento' ? 'Avaliacao' : 'Certificado') + '_' + c.nome.replace(/\s+/g, '_') + '.pdf';
-            
-            if (pdfBlob) {
-                const url = URL.createObjectURL(pdfBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = nomeArquivo;
-                a.click();
-                
-                const msg = `Cliente: ${c.nome}\nVeículo: ${c.veiculo}\nDocumento: ${nomeArquivo}`;
-                const waUrl = 'https://web.whatsapp.com/send?phone=' + c.whatsapp.replace(/\D/g, '') + '&text=' + encodeURIComponent(document.getElementById('waPreview').textContent);
-                
-                setTimeout(() => {
-                    window.open(waUrl, '_blank');
-                }, 1500);
-            } else {
+            if (whatsappLink) {
                 window.open(whatsappLink, '_blank');
+            } else {
+                const c = clientes[clienteAtual];
+                const waNum = c.whatsapp.replace(/\D/g, '');
+                const texto = document.getElementById('waPreview').textContent;
+                window.open('https://wa.me/' + waNum + '?text=' + encodeURIComponent(texto), '_blank');
             }
         }
 
