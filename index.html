@@ -1721,6 +1721,9 @@
                 document.getElementById('aba-' + a).classList.toggle('hidden', a !== aba);
                 document.querySelector(`.tab[onclick="mudarAba('${a}')"]`).classList.toggle('active', a === aba);
             });
+            if (aba === 'servicos' && typeof renderizarServicos === 'function') {
+                renderizarServicos();
+            }
         }
 
         function gerarLaudo(tipo) {
