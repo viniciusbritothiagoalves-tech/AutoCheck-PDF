@@ -92,10 +92,12 @@
         .item-row { background: var(--bg-input); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--success); }
         .item-row.atencao { border-left-color: var(--warning); }
         .item-row.critico { border-left-color: var(--danger); }
-        .item-row .item-header { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .item-row .item-header { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
         .item-row input, .item-row select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
         .item-row input { flex: 1; min-width: 150px; }
         .item-row textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
+        .btn-remover { background: var(--danger); color: #fff; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; }
+        .btn-remover:hover { background: #b91c1c; }
         
         .add-btn { background: transparent; border: 2px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; }
         
@@ -205,6 +207,7 @@
     </div>
 
     <div id="recuperarScreen" class="container hidden" style="max-width: 400px; padding-top: 50px;">
+        <button class="btn" onclick="mostrarLogin()" style="background: var(--bg-input); margin-bottom: 15px;">← Voltar</button>
         <div class="logo-area">
             <h1>AutoCheck <span>PDF</span></h1>
             <p>Recuperar senha</p>
@@ -500,7 +503,6 @@
             <div class="tabs">
                 <button class="tab active" onclick="mudarAba('itens')">Itens</button>
                 <button class="tab" onclick="mudarAba('servicos')">Serviços</button>
-                <button class="tab" onclick="mudarAba('garantia')">Garantia</button>
             </div>
             
             <div id="aba-itens">
@@ -510,26 +512,16 @@
             
             <div id="aba-servicos" class="hidden">
                 <div class="services-grid" id="servicesGrid"></div>
-                <div class="form-group" style="margin-top: 15px;">
+                <div class="form-group" style="margin-top: 20px;">
                     <label>Outros serviços</label>
-                    <textarea id="outrosServicos" oninput="autoSalvar()" rows="3"></textarea>
-                </div>
-            </div>
-            
-            <div id="aba-garantia" class="hidden">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Garantia</label>
-                        <input type="text" id="laudoGarantia" placeholder="90 dias" oninput="autoSalvar()">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                        <select id="outrosServicosUrgencia" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text);">
+                            <option value="">Sem urgência</option>
+                            <option value="atencao">⚠️ Atenção</option>
+                            <option value="critico">🔴 Urgente</option>
+                        </select>
+                        <input type="text" id="outrosServicos" placeholder="Descreva outros serviços..." oninput="autoSalvar()" style="flex: 1;">
                     </div>
-                    <div class="form-group">
-                        <label>Próxima Revisão</label>
-                        <input type="text" id="laudoProxima" placeholder="A cada 6 meses" oninput="autoSalvar()">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Observações</label>
-                    <textarea id="laudoObs" oninput="autoSalvar()" rows="3"></textarea>
                 </div>
             </div>
             
@@ -656,7 +648,7 @@
             localStorage.setItem('usuarios', JSON.stringify(usuarios));
         }
 
-        const servicosLista = ['Revisão geral', 'Troca de óleo', 'Freios', 'Suspensão', 'Alinhamento', 'Balanceamento', 'Filtros', 'Higienização ar condicionado', 'Correias', 'Escapamento', 'Arrefecimento', 'Elétrica', 'Injeção eletrônica', 'Diagnóstico', 'Embreagem', 'Câmbio', 'Direção', 'Pneus', 'Bateria', 'Vidros', 'Pintura', 'Funilaria', 'Inspeção', 'Vistoria'];
+        const servicosLista = ['Alinhamento', 'Arrefecimento', 'Balanceamento', 'Bateria', 'Câmbio', 'Correias', 'Diagnóstico', 'Direção', 'Elétrica', 'Embreagem', 'Escapamento', 'Filtros', 'Freios', 'Funilaria', 'Higienização ar condicionado', 'Injeção eletrônica', 'Pintura', 'Pneus', 'Revisão geral', 'Suspensão', 'Troca de óleo', 'Vidros'];
 
         const stripeLinks = {
             basico: 'https://buy.stripe.com/eVq9AS1wI8uLcXX4rV1VK0o',
@@ -1415,9 +1407,32 @@
         }
 
         function renderizarServicos() {
-            document.getElementById('servicesGrid').innerHTML = servicosLista.map(s => 
-                `<label class="service-item"><input type="checkbox" value="${s}" onchange="this.parentElement.classList.toggle('selected', this.checked); autoSalvar()"> ${s}</label>`
-            ).join('');
+            const c = clientes[clienteAtual];
+            const servicosAtuais = c.servicos || [];
+            
+            document.getElementById('servicesGrid').innerHTML = servicosLista.map(s => {
+                const servicoData = servicosAtuais.find(sv => sv.nome === s);
+                const checked = servicosAtuais.some(sv => sv.nome === s);
+                const urgencia = servicoData ? servicoData.urgencia : '';
+                
+                return `<div class="service-item" style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" value="${s}" ${checked ? 'checked' : ''} onchange="toggleServico(this)">
+                        <span>${s}</span>
+                    </div>
+                    <select class="servico-urgencia" data-servico="${s}" onchange="autoSalvar()" style="margin-top: 5px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 6px; color: var(--text); font-size: 12px;">
+                        <option value="">Sem urgência</option>
+                        <option value="atencao" ${urgencia === 'atencao' ? 'selected' : ''}>⚠️ Atenção</option>
+                        <option value="critico" ${urgencia === 'critico' ? 'selected' : ''}>🔴 Urgente</option>
+                    </select>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleServico(checkbox) {
+            const parent = checkbox.closest('.service-item');
+            parent.classList.toggle('selected', checkbox.checked);
+            autoSalvar();
         }
 
         function mostrarClientes() {
@@ -1539,14 +1554,34 @@
             document.getElementById('formLaudo').classList.remove('hidden');
             mudarAba('itens');
             renderizarItens();
-            document.getElementById('outrosServicos').value = c.servicos.filter(s => !servicosLista.includes(s)).join(', ');
+            
+            const servicosNaoLista = c.servicos ? c.servicos.filter(s => {
+                const nome = typeof s === 'string' ? s : s.nome;
+                return !servicosLista.includes(nome);
+            }) : [];
+            
+            if (servicosNaoLista.length > 0) {
+                const ultimoOutros = servicosNaoLista[servicosNaoLista.length - 1];
+                document.getElementById('outrosServicos').value = typeof ultimoOutros === 'string' ? ultimoOutros : ultimoOutros.nome;
+                document.getElementById('outrosServicosUrgencia').value = typeof ultimoOutros === 'object' ? (ultimoOutros.urgencia || '') : '';
+            } else {
+                document.getElementById('outrosServicos').value = '';
+                document.getElementById('outrosServicosUrgencia').value = '';
+            }
+            
             document.querySelectorAll('#servicesGrid input').forEach(cb => {
-                cb.checked = c.servicos.includes(cb.value);
-                cb.parentElement.classList.toggle('selected', cb.checked);
+                const servicoObj = c.servicos ? c.servicos.find(s => (typeof s === 'string' ? s : s.nome) === cb.value) : null;
+                const checked = servicoObj ? true : false;
+                cb.checked = checked;
+                if (checked) {
+                    const parent = cb.closest('.service-item');
+                    const select = parent.querySelector('.servico-urgencia');
+                    if (select && servicoObj && typeof servicoObj === 'object') {
+                        select.value = servicoObj.urgencia || '';
+                    }
+                    parent.classList.add('selected');
+                }
             });
-            document.getElementById('laudoGarantia').value = c.garantia || '';
-            document.getElementById('laudoProxima').value = c.proxima || '';
-            document.getElementById('laudoObs').value = c.obs || '';
         }
 
         function renderizarItens() {
@@ -1563,7 +1598,7 @@
                             <option value="atencao" ${item.status==='atencao'?'selected':''}>Atenção</option>
                             <option value="critico" ${item.status==='critico'?'selected':''}>Crítico</option>
                         </select>
-                        <button class="btn btn-sm btn-danger" onclick="removerItem(${i})">×</button>
+                        <button class="btn-remover" onclick="removerItem(${i})" title="Remover">×</button>
                     </div>
                     <textarea placeholder="Observação" oninput="autoSalvar()">${item.obs}</textarea>
                 </div>
@@ -1571,15 +1606,22 @@
         }
 
         function adicionarItem() {
-            clientes[clienteAtual].itens.push({ nome: '', status: 'ok', obs: '' });
-            autoSalvar();
+            const c = clientes[clienteAtual];
+            if (!c.itens) c.itens = [];
+            c.itens.push({ nome: '', status: 'ok', obs: '' });
             renderizarItens();
+            salvarDados();
+            mostrarMsgSalvo();
         }
 
         function removerItem(idx) {
-            clientes[clienteAtual].itens.splice(idx, 1);
-            autoSalvar();
-            renderizarItens();
+            const c = clientes[clienteAtual];
+            if (c.itens && c.itens.length > 1) {
+                c.itens.splice(idx, 1);
+                renderizarItens();
+                salvarDados();
+                mostrarMsgSalvo();
+            }
         }
 
         function mudarStatus(select, idx) {
@@ -1648,12 +1690,17 @@
                 c.itens[i].obs = row.querySelector('textarea').value;
             });
             c.servicos = [];
-            document.querySelectorAll('#servicesGrid input:checked').forEach(cb => c.servicos.push(cb.value));
+            document.querySelectorAll('#servicesGrid input:checked').forEach(cb => {
+                const parent = cb.closest('.service-item');
+                const select = parent.querySelector('.servico-urgencia');
+                const urgencia = select ? select.value : '';
+                c.servicos.push({ nome: cb.value, urgencia: urgencia });
+            });
             const outros = document.getElementById('outrosServicos').value;
-            if (outros) c.servicos.push(outros);
-            c.garantia = document.getElementById('laudoGarantia').value;
-            c.proxima = document.getElementById('laudoProxima').value;
-            c.obs = document.getElementById('laudoObs').value;
+            const outrosUrgencia = document.getElementById('outrosServicosUrgencia').value;
+            if (outros) {
+                c.servicos.push({ nome: outros, urgencia: outrosUrgencia });
+            }
             c.ultimaAtt = new Date().toISOString();
             salvarDados();
             mostrarMsgSalvo();
@@ -1670,7 +1717,7 @@
         }
 
         function mudarAba(aba) {
-            ['itens', 'servicos', 'garantia'].forEach(a => {
+            ['itens', 'servicos'].forEach(a => {
                 document.getElementById('aba-' + a).classList.toggle('hidden', a !== aba);
                 document.querySelector(`.tab[onclick="mudarAba('${a}')"]`).classList.toggle('active', a === aba);
             });
@@ -1720,9 +1767,6 @@
                 ${urgentHtml}
                 <h2>Serviços ${tipoLaudo === 'orcamento' ? 'Identificados' : 'Realizados'}</h2>
                 ${servHtml}
-                <h2>Garantia</h2>
-                <p><strong>Garantia:</strong> ${c.garantia || '-'}</p>
-                <p><strong>Próxima revisão:</strong> ${c.proxima || '-'}</p>
                 ${c.obs ? '<h2>Observações</h2><p>' + c.obs + '</p>' : ''}
                 <div class="assinatura">
                     <p style="color:#666">${dataExt}</p>
@@ -1752,7 +1796,15 @@
                 if (c.servicos.length > 0) {
                     corpo += 'Servicos Necessarios:\n';
                     c.servicos.forEach(s => {
-                        corpo += '  - ' + s + '\n';
+                        const nomeServico = typeof s === 'string' ? s : s.nome;
+                        const urgencia = typeof s === 'object' ? s.urgencia : '';
+                        if (urgencia === 'critico') {
+                            corpo += '  !! ' + nomeServico + ' [URGENTE]\n';
+                        } else if (urgencia === 'atencao') {
+                            corpo += '  * ' + nomeServico + ' [ATENCAO]\n';
+                        } else {
+                            corpo += '  - ' + nomeServico + '\n';
+                        }
                     });
                     corpo += '\n';
                 }
@@ -1794,7 +1846,15 @@
                 if (c.servicos.length > 0) {
                     corpo += 'Servicos Executados:\n';
                     c.servicos.forEach(s => {
-                        corpo += '  OK ' + s + '\n';
+                        const nomeServico = typeof s === 'string' ? s : s.nome;
+                        const urgencia = typeof s === 'object' ? s.urgencia : '';
+                        if (urgencia === 'critico') {
+                            corpo += '  !! ' + nomeServico + ' [URGENTE]\n';
+                        } else if (urgencia === 'atencao') {
+                            corpo += '  * ' + nomeServico + ' [ATENCAO]\n';
+                        } else {
+                            corpo += '  OK ' + nomeServico + '\n';
+                        }
                     });
                     corpo += '\n';
                 }
@@ -1813,13 +1873,6 @@
                         corpo += '\n';
                     });
                     corpo += '\n';
-                }
-                
-                if (c.garantia) {
-                    corpo += 'Garantia: ' + c.garantia + '\n';
-                }
-                if (c.proxima) {
-                    corpo += 'Proxima revisao: ' + c.proxima + '\n';
                 }
                 
                 corpo += '\nO certificado completo esta em anexo.\n\n';
@@ -1991,13 +2044,30 @@
             doc.setFontSize(9);
             if (c.servicos.length > 0) {
                 c.servicos.forEach((s, idx) => {
-                    const cor = coresServicos[idx % coresServicos.length];
+                    const nomeServico = typeof s === 'string' ? s : s.nome;
+                    const urgencia = typeof s === 'object' ? s.urgencia : '';
+                    
+                    let cor, textoUrgencia;
+                    if (urgencia === 'critico') {
+                        cor = [220, 38, 38];
+                        textoUrgencia = 'URGENTE';
+                    } else if (urgencia === 'atencao') {
+                        cor = [234, 179, 8];
+                        textoUrgencia = 'ATENÇÃO';
+                    } else {
+                        cor = coresServicos[idx % coresServicos.length];
+                        textoUrgencia = tipo === 'orcamento' ? '→ Executar' : '✓ Concluído';
+                    }
+                    
                     doc.setFillColor(cor[0], cor[1], cor[2]);
-                    doc.roundedRect(14, y - 3, 90, 6, 1, 1, 'F');
+                    doc.roundedRect(14, y - 3, 130, 6, 1, 1, 'F');
                     doc.setTextColor(255, 255, 255);
-                    doc.text(s.substring(0, 25), 18, y);
-                    doc.setTextColor(100, 100, 100);
-                    doc.text((tipo === 'orcamento' ? '→ Executar' : '✓ Concluído'), 110, y);
+                    doc.text(nomeServico.substring(0, 25), 18, y);
+                    if (textoUrgencia) {
+                        doc.setFontSize(7);
+                        doc.text(textoUrgencia, 130, y);
+                        doc.setFontSize(9);
+                    }
                     y += 8;
                 });
             } else {
@@ -2012,21 +2082,8 @@
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(50, 50, 50);
-            doc.text('GARANTIA E INFORMAÇÕES', 15, y + 7);
+            doc.text('INFORMACOES ADICIONAIS', 15, y + 7);
             y += 15;
-            
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Garantia:', 15, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(c.garantia || 'Não especificada', 40, y);
-            y += 6;
-            
-            doc.setFont('helvetica', 'bold');
-            doc.text('Próxima Revisão:', 15, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(c.proxima || 'Não especificada', 50, y);
-            y += 8;
             
             if (c.obs) {
                 doc.setFont('helvetica', 'bold');
