@@ -607,6 +607,7 @@
         let pdfBlob = null;
         let usuarioPago = false;
         let planoSelecionado = 'basico';
+        let carregandoPagina = true;
         
         let inactivityTimer = null;
         const INACTIVITY_TIMEOUT = 3 * 60 * 60 * 1000;
@@ -767,6 +768,7 @@
                     document.getElementById('adminPanel').classList.remove('hidden');
                     mostrarDashboardAdmin();
                     setupInactivityTracker();
+                    carregandoPagina = false;
                     return;
                 }
                 
@@ -796,18 +798,23 @@
                     verificarPagamento();
                     renderizarClientes();
                     setupInactivityTracker();
+                    carregandoPagina = false;
                 } else {
                     localStorage.removeItem('sessaoUsuario');
                     mostrarLogin();
+                    carregandoPagina = false;
                 }
             } catch(e) {
                 console.log('Erro ao restaurar sessao:', e);
                 localStorage.removeItem('sessaoUsuario');
                 mostrarLogin();
+                carregandoPagina = false;
             }
         }
 
         window.addEventListener('storage', function(e) {
+            if (carregandoPagina) return;
+            
             if (e.key === 'sessaoUsuario') {
                 if (!e.newValue) {
                     const sessaoAtual = localStorage.getItem('sessaoUsuario');
@@ -1163,6 +1170,7 @@
             
             usuarioAtual = novoUsuario;
             salvarSessao();
+            carregandoPagina = false;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('cadastroScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
@@ -1180,6 +1188,7 @@
             if (email === 'admin@autocheck.com' && senha === 'Admin123!') {
                 usuarioAtual = adminMaster;
                 salvarSessao();
+                carregandoPagina = false;
                 mostrarDashboardAdmin();
                 return;
             }
@@ -1218,6 +1227,7 @@
                 document.getElementById('nomeUsuario').textContent = '🔧 Usuário Teste';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
+                carregandoPagina = false;
                 verificarPagamento();
                 return;
             }
@@ -1256,6 +1266,7 @@
                 document.getElementById('nomeUsuario').textContent = '🔧 Usuário Profissional';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
+                carregandoPagina = false;
                 verificarPagamento();
                 return;
             }
@@ -1278,6 +1289,7 @@
                 document.getElementById('adminPanel').classList.add('hidden');
                 
                 salvarSessao();
+                carregandoPagina = false;
                 verificarPagamento();
                 mostrarClientes();
             } else {
