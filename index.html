@@ -158,9 +158,58 @@
             <button class="btn btn-block" onclick="fazerLogin()">Entrar</button>
             <div style="text-align: center; margin-top: 15px;">
                 <a href="#" onclick="mostrarCadastro()" style="color: var(--primary); font-size: 13px;">Criar conta</a>
+                <span style="color: var(--text-muted); margin: 0 10px;">|</span>
+                <a href="#" onclick="mostrarRecuperar()" style="color: var(--primary); font-size: 13px;">Esqueci a senha</a>
             </div>
         </div>
         
+    </div>
+
+    <div id="recuperarScreen" class="container hidden" style="max-width: 400px; padding-top: 50px;">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <p>Recuperar senha</p>
+        </div>
+        <div class="card" id="recuperarStep1">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Seu Email</label>
+                <input type="email" id="recEmail" placeholder="seu@email.com">
+            </div>
+            <button class="btn btn-block" onclick="buscarUsuarioRecuperar()">Continuar</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">Voltar ao login</a>
+            </div>
+        </div>
+        <div class="card hidden" id="recuperarStep2">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Pergunta de Segurança</label>
+                <div id="perguntaUsuario" style="background: var(--bg-input); padding: 12px; border-radius: 8px; color: var(--text);"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Sua Resposta</label>
+                <input type="text" id="recResposta" placeholder="Sua resposta">
+            </div>
+            <button class="btn btn-block" onclick="verificarRespostaRecuperar()">Verificar</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">Voltar ao login</a>
+            </div>
+        </div>
+        <div class="card hidden" id="recuperarStep3">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Nova Senha</label>
+                <input type="password" id="novaSenhaRec" placeholder="••••••">
+            </div>
+            <div id="senhaRequisitoRec" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="r-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dígitos</span>
+                <span id="r-mai" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">A-Z</span>
+                <span id="r-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
+                <span id="r-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
+            </div>
+            <button class="btn btn-success btn-block" onclick="salvarNovaSenha()">Salvar Nova Senha</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">Voltar ao login</a>
+            </div>
+        </div>
     </div>
 
     <div id="cadastroScreen" class="container hidden" style="max-width: 450px; padding-top: 30px;">
@@ -187,9 +236,22 @@
                 <span id="s-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
                 <span id="s-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 15px;">
                 <label>WhatsApp</label>
                 <input type="tel" id="cadWhatsapp" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Pergunta de Segurança (para recuperar senha)</label>
+                <select id="cadPergunta">
+                    <option value="pet">Qual nome do seu primeiro pet?</option>
+                    <option value="cidade">Qual cidade você nasceu?</option>
+                    <option value="escola">Nome da primeira escola?</option>
+                    <option value="carro">Qual foi seu primeiro carro?</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Resposta</label>
+                <input type="text" id="cadResposta" placeholder="Sua resposta secreta">
             </div>
             <button class="btn btn-success btn-block" onclick="criarConta()">Criar Conta</button>
             <div style="text-align: center; margin-top: 15px;">
@@ -752,6 +814,95 @@
             document.getElementById('formCliente').classList.add('hidden');
             document.getElementById('formLaudo').classList.add('hidden');
             document.getElementById('planosScreen').classList.add('hidden');
+            document.getElementById('recuperarScreen').classList.add('hidden');
+            document.getElementById('recuperarStep1').classList.remove('hidden');
+            document.getElementById('recuperarStep2').classList.add('hidden');
+            document.getElementById('recuperarStep3').classList.add('hidden');
+            document.getElementById('recEmail').value = '';
+            document.getElementById('recResposta').value = '';
+            document.getElementById('novaSenhaRec').value = '';
+        }
+
+        function mostrarRecuperar() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('recuperarScreen').classList.remove('hidden');
+            document.getElementById('recuperarStep1').classList.remove('hidden');
+            document.getElementById('recuperarStep2').classList.add('hidden');
+            document.getElementById('recuperarStep3').classList.add('hidden');
+        }
+
+        let usuarioRecuperar = null;
+
+        function buscarUsuarioRecuperar() {
+            const email = document.getElementById('recEmail').value;
+            if (!email) {
+                alert('Informe seu email.');
+                return;
+            }
+
+            usuarioRecuperar = usuarios.find(u => u.email === email);
+            if (!usuarioRecuperar) {
+                alert('Email não encontrado.');
+                return;
+            }
+
+            if (!usuarioRecuperar.pergunta || !usuarioRecuperar.resposta) {
+                alert('Este usuário não tem pergunta de segurança cadastrada. Entre em contato com o suporte.');
+                return;
+            }
+
+            const perguntas = {
+                pet: 'Qual nome do seu primeiro pet?',
+                cidade: 'Qual cidade você nasceu?',
+                escola: 'Nome da primeira escola?',
+                carro: 'Qual foi seu primeiro carro?'
+            };
+
+            document.getElementById('perguntaUsuario').textContent = perguntas[usuarioRecuperar.pergunta] || 'Pergunta não encontrada';
+            document.getElementById('recuperarStep1').classList.add('hidden');
+            document.getElementById('recuperarStep2').classList.remove('hidden');
+        }
+
+        function verificarRespostaRecuperar() {
+            const resposta = document.getElementById('recResposta').value.toLowerCase().trim();
+            
+            if (!resposta) {
+                alert('Informe a resposta.');
+                return;
+            }
+
+            if (resposta !== usuarioRecuperar.resposta.toLowerCase().trim()) {
+                alert('Resposta incorreta.');
+                return;
+            }
+
+            document.getElementById('recuperarStep2').classList.add('hidden');
+            document.getElementById('recuperarStep3').classList.remove('hidden');
+        }
+
+        function salvarNovaSenha() {
+            const novaSenha = document.getElementById('novaSenhaRec').value;
+
+            if (!novaSenha) {
+                alert('Informe a nova senha.');
+                return;
+            }
+
+            const validacao = validarSenha(novaSenha);
+            if (!validacao.ok) {
+                alert(validacao.msg);
+                return;
+            }
+
+            const idx = usuarios.findIndex(u => u.email === usuarioRecuperar.email);
+            if (idx !== -1) {
+                usuarios[idx].senha = novaSenha;
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            }
+
+            alert('Senha alterada com sucesso! Faça login com sua nova senha.');
+            usuarioRecuperar = null;
+            mostrarLogin();
         }
 
         function mostrarCadastro() {
@@ -764,6 +915,8 @@
             const email = document.getElementById('cadEmail').value;
             const senha = document.getElementById('cadSenha').value;
             const whatsapp = document.getElementById('cadWhatsapp').value;
+            const pergunta = document.getElementById('cadPergunta').value;
+            const resposta = document.getElementById('cadResposta').value;
 
             if (!nome || !email) {
                 alert('Preencha o nome e email.');
@@ -772,6 +925,11 @@
 
             if (!senha) {
                 alert('Informe uma senha.');
+                return;
+            }
+
+            if (!resposta) {
+                alert('Informe a resposta da pergunta de segurança.');
                 return;
             }
 
@@ -791,6 +949,8 @@
                 email, 
                 senha, 
                 whatsapp, 
+                pergunta,
+                resposta,
                 plano: null,
                 pago: false,
                 admin: false,
