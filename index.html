@@ -607,7 +607,7 @@
         let pdfBlob = null;
         let usuarioPago = false;
         let planoSelecionado = 'basico';
-        let carregandoPagina = true;
+        let sessaoRestaurada = false;
         
         let inactivityTimer = null;
         const INACTIVITY_TIMEOUT = 3 * 60 * 60 * 1000;
@@ -692,21 +692,29 @@
         }
 
         function init() {
-            console.log('[DEBUG] init() started, carregandoPagina:', carregandoPagina);
-            const sessaoAntes = localStorage.getItem('sessaoUsuario');
-            console.log('[DEBUG] sessao before restore:', sessaoAntes ? 'exists' : 'null');
+            renderizarServicos();
+            setupInactivityTracker();
             
-            try {
-                restaurarSessao();
-                console.log('[DEBUG] after restaurarSessao, usuarioAtual:', usuarioAtual ? usuarioAtual.email : 'null');
-                
-                renderizarServicos();
-                setupInactivityTracker();
-                verificarMostrarAjuda();
-            } catch(e) {
-                console.error('[DEBUG] Erro no init:', e);
+            const sessao = localStorage.getItem('sessaoUsuario');
+            if (sessao) {
+                try {
+                    const dados = JSON.parse(sessao);
+                    if (dados && dados.email && dados.senha) {
+                        restaurarSessao();
+                    } else {
+                        localStorage.removeItem('sessaoUsuario');
+                        mostrarLogin();
+                    }
+                } catch(e) {
+                    localStorage.removeItem('sessaoUsuario');
+                    mostrarLogin();
+                }
+            } else {
                 mostrarLogin();
             }
+            
+            sessaoRestaurada = true;
+            verificarMostrarAjuda();
         }
 
         function verificarMostrarAjuda() {
@@ -751,109 +759,52 @@
         }
 
         function restaurarSessao() {
-            console.log('[DEBUG] restaurarSessao started');
-            const sessaoSalva = localStorage.getItem('sessaoUsuario');
-            console.log('[DEBUG] sessaoSalva:', sessaoSalva ? 'exists' : 'null');
+            const sessao = localStorage.getItem('sessaoUsuario');
+            if (!sessao) return;
             
-            if (!sessaoSalva) {
-                carregandoPagina = false;
-                console.log('[DEBUG] No session found, showing login');
-                mostrarLogin();
+            const dados = JSON.parse(sessao);
+            if (!dados || !dados.email || !dados.senha) return;
+            
+            if (dados.email === 'admin@autocheck.com') {
+                usuarioAtual = adminMaster;
+                usuarioPago = true;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('nomeUsuario').textContent = 'Admin Master';
+                document.getElementById('planBadge').style.display = 'inline-block';
+                document.getElementById('planBadge').textContent = 'MASTER';
+                document.getElementById('adminPanel').classList.remove('hidden');
+                mostrarDashboardAdmin();
                 return;
             }
             
-            try {
-                const dadosSessao = JSON.parse(sessaoSalva);
-                if (!dadosSessao || !dadosSessao.email || !dadosSessao.senha) {
-                    localStorage.removeItem('sessaoUsuario');
-                    carregandoPagina = false;
-                    mostrarLogin();
-                    return;
+            usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            const user = usuarios.find(u => u.email === dados.email);
+            
+            if (user && user.senha === dados.senha) {
+                usuarioAtual = user;
+                usuarioPago = user.pago === true;
+                
+                const dadosCli = localStorage.getItem('clientes_' + user.email);
+                if (dadosCli) {
+                    try { clientes = JSON.parse(dadosCli); } catch(e) { clientes = []; }
                 }
                 
-                const userEmail = dadosSessao.email;
-                const userSenha = dadosSessao.senha;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
+                document.getElementById('adminPanel').classList.add('hidden');
                 
-                if (userEmail === 'admin@autocheck.com') {
-                    usuarioAtual = adminMaster;
-                    usuarioPago = true;
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('nomeUsuario').textContent = 'Admin Master';
-                    document.getElementById('planBadge').style.display = 'inline-block';
-                    document.getElementById('planBadge').textContent = 'MASTER';
-                    document.getElementById('adminPanel').classList.remove('hidden');
-                    mostrarDashboardAdmin();
-                    setupInactivityTracker();
-                    carregandoPagina = false;
-                    return;
-                }
-                
-                usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-                const user = usuarios.find(u => u.email === userEmail);
-                
-                if (user && user.senha === userSenha) {
-                    usuarioAtual = user;
-                    usuarioPago = user.pago === true;
-                    
-                    const dadosCli = localStorage.getItem('clientes_' + user.email);
-                    if (dadosCli) {
-                        try {
-                            clientes = JSON.parse(dadosCli);
-                        } catch(e) {
-                            clientes = [];
-                        }
-                    } else {
-                        clientes = [];
-                    }
-                    
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
-                    document.getElementById('adminPanel').classList.add('hidden');
-                    
-                    verificarPagamento();
-                    renderizarClientes();
-                    setupInactivityTracker();
-                    carregandoPagina = false;
-                } else {
-                    localStorage.removeItem('sessaoUsuario');
-                    carregandoPagina = false;
-                    mostrarLogin();
-                }
-            } catch(e) {
-                console.log('Erro ao restaurar sessao:', e);
-                localStorage.removeItem('sessaoUsuario');
-                carregandoPagina = false;
-                mostrarLogin();
+                verificarPagamento();
+                renderizarClientes();
             }
         }
 
         window.addEventListener('storage', function(e) {
-            if (carregandoPagina) return;
+            if (!sessaoRestaurada) return;
             
-            if (e.key === 'sessaoUsuario') {
-                if (!e.newValue) {
-                    const sessaoAtual = localStorage.getItem('sessaoUsuario');
-                    if (!sessaoAtual) {
-                        logout();
-                    }
-                } else if (e.oldValue && !e.newValue) {
-                    logout();
-                }
-            }
-            if (e.key && e.key.startsWith('clientes_')) {
-                if (usuarioAtual) {
-                    const dadosCli = localStorage.getItem('clientes_' + usuarioAtual.email);
-                    if (dadosCli) {
-                        try {
-                            clientes = JSON.parse(dadosCli);
-                            if (document.getElementById('mainApp') && !document.getElementById('mainApp').classList.contains('hidden')) {
-                                renderizarClientes();
-                            }
-                        } catch(err) {}
-                    }
-                }
+            if (e.key === 'sessaoUsuario' && !e.newValue) {
+                logout();
             }
         });
 
@@ -990,8 +941,6 @@
         }
 
         function verificarRetornoStripe() {
-            if (!carregandoPagina) return;
-            
             const urlParams = new URLSearchParams(window.location.search);
             const success = urlParams.get('success');
             const canceled = urlParams.get('canceled');
@@ -1187,7 +1136,7 @@
             
             usuarioAtual = novoUsuario;
             salvarSessao();
-            carregandoPagina = false;
+            sessaoRestaurada = true;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('cadastroScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
@@ -1205,7 +1154,7 @@
             if (email === 'admin@autocheck.com' && senha === 'Admin123!') {
                 usuarioAtual = adminMaster;
                 salvarSessao();
-                carregandoPagina = false;
+                sessaoRestaurada = true;
                 mostrarDashboardAdmin();
                 return;
             }
@@ -1244,7 +1193,7 @@
                 document.getElementById('nomeUsuario').textContent = '🔧 Usuário Teste';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
-                carregandoPagina = false;
+                sessaoRestaurada = true;
                 verificarPagamento();
                 return;
             }
@@ -1283,7 +1232,7 @@
                 document.getElementById('nomeUsuario').textContent = '🔧 Usuário Profissional';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
-                carregandoPagina = false;
+                sessaoRestaurada = true;
                 verificarPagamento();
                 return;
             }
@@ -1306,7 +1255,7 @@
                 document.getElementById('adminPanel').classList.add('hidden');
                 
                 salvarSessao();
-                carregandoPagina = false;
+                sessaoRestaurada = true;
                 verificarPagamento();
                 mostrarClientes();
             } else {
