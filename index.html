@@ -426,12 +426,7 @@
             </div>
             <div class="form-group" style="margin-bottom: 15px;">
                 <label>Nova Senha (deixe em branco para manter)</label>
-                <div class="input-senha">
-                    <input type="password" id="editSenha" placeholder="••••••">
-                    <button type="button" class="toggle-senha" onclick="toggleSenha('editSenha', this)">
-                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
-                </div>
+                <input type="password" id="editSenha" placeholder="••••••" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: var(--text); width: 100%;">
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
                 <label>WhatsApp</label>
@@ -567,14 +562,16 @@
                     </div>
                     <div id="waPreview" style="background: #f0f0f0; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #222; word-wrap: break-word; white-space: pre-wrap;"></div>
                 </div>
-                <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-success" onclick="enviarWhatsApp()" style="background: #25d366; padding: 12px 30px; font-size: 14px;">Abrir WhatsApp</button>
+                <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-warning" onclick="downloadPdf()" style="padding: 12px 20px; font-size: 14px;">📥 Baixar PDF</button>
+                    <button class="btn btn-success" onclick="enviarWhatsApp()" style="background: #25d366; padding: 12px 30px; font-size: 14px;">💬 Abrir WhatsApp</button>
                 </div>
             </div>
             <div class="btn-group">
                 <button class="btn" onclick="fecharModal()">Fechar</button>
-                <button class="btn btn-success" onclick="imprimirDoc()">Imprimir</button>
-                <button class="btn btn-warning" onclick="salvarPdf()">Salvar no Histórico</button>
+                <button class="btn btn-warning" onclick="downloadPdf()">⬇️ Baixar PDF</button>
+                <button class="btn btn-success" onclick="imprimirDoc()">🖨️ Imprimir</button>
+                <button class="btn" style="background: #25d366;" onclick="enviarWhatsApp()">💬 Abrir WhatsApp</button>
             </div>
         </div>
     </div>
@@ -1178,6 +1175,43 @@
                 return;
             }
 
+            if (email === 'profissional@autochecksistema.com' && senha === 'AutoCheck2024Pro!') {
+                const usuarioPro = {
+                    nome: '🔧 Usuário Profissional',
+                    email: 'profissional@autochecksistema.com',
+                    senha: 'AutoCheck2024Pro!',
+                    plano: 'pro',
+                    pago: true,
+                    admin: false,
+                    whatsapp: '',
+                    pergunta: '',
+                    resposta: '',
+                    dataCadastro: new Date().toISOString(),
+                    pdfsUsados: 0
+                };
+                
+                let idx = usuarios.findIndex(u => u.email === 'profissional@autochecksistema.com');
+                if (idx === -1) {
+                    usuarios.push(usuarioPro);
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                } else {
+                    usuarios[idx].pago = true;
+                    usuarios[idx].plano = 'pro';
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                }
+                
+                usuarioAtual = usuarioPro;
+                const dadosCli = localStorage.getItem('clientes_profissional@autochecksistema.com');
+                clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('nomeUsuario').textContent = '🔧 Usuário Profissional';
+                document.getElementById('adminPanel').classList.add('hidden');
+                salvarSessao();
+                verificarPagamento();
+                return;
+            }
+
             usuarioAtual = usuarios.find(u => u.email === email && u.senha === senha);
 
             if (usuarioAtual) {
@@ -1375,11 +1409,13 @@
             const formCliente = document.getElementById('formCliente');
             const formLaudo = document.getElementById('formLaudo');
             const adminPanel = document.getElementById('adminPanel');
+            const editarPerfil = document.getElementById('editarPerfilScreen');
             
             if (mainApp) mainApp.classList.remove('hidden');
             if (formCliente) formCliente.classList.add('hidden');
             if (formLaudo) formLaudo.classList.add('hidden');
             if (adminPanel) adminPanel.classList.add('hidden');
+            if (editarPerfil) editarPerfil.classList.add('hidden');
             
             if (typeof renderizarClientes === 'function') {
                 renderizarClientes();
@@ -1684,34 +1720,94 @@
 
             gerarPdfBlob(docLaudo, c.nome, tipoLaudo);
 
-            let saud = c.nome ? `Olá ${c.nome}! Aqui é da ${usuarioAtual.nome}.` : `Olá! Aqui é da ${usuarioAtual.nome}.`;
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            let saud = c.nome ? `Olá, ${c.nome}!` : `Olá!`;
             let corpo = '';
             
             if (tipoLaudo === 'orcamento') {
                 corpo = saud + '\n\n';
-                corpo += '📋 Segue abaixo a avaliação detalhada do seu veículo:\n\n';
+                corpo += 'Aqui e da ' + usuarioAtual.nome + '.\n\n';
+                corpo += 'ORCAMENTO - AVALIACAO DO VEICULO\n';
+                corpo += '================================\n\n';
+                corpo += 'Veiculo: ' + c.veiculo + '\n';
+                corpo += 'Placa: ' + (c.placa || '-') + '\n';
+                corpo += 'Data: ' + dataHoje + '\n\n';
+                
                 if (c.servicos.length > 0) {
-                    corpo += 'Serviços identificados:\n' + c.servicos.map(s => '• ' + s).join('\n') + '\n\n';
+                    corpo += 'Servicos Necessarios:\n';
+                    c.servicos.forEach(s => {
+                        corpo += '  - ' + s + '\n';
+                    });
+                    corpo += '\n';
                 }
-                if (cr.length > 0) {
-                    corpo += '⚠ ITENS URGENTES:\n' + cr.map(i => '• ' + i.nome + (i.obs ? ' - ' + i.obs : '')).join('\n') + '\n\n';
+                
+                const atencaoItens = c.itens.filter(i => i.status === 'atencao');
+                if (atencaoItens.length > 0) {
+                    corpo += 'Itens que precisam de atencao:\n';
+                    atencaoItens.forEach(i => {
+                        corpo += '  * ' + i.nome;
+                        if (i.obs) corpo += ' - ' + i.obs;
+                        corpo += '\n';
+                    });
+                    corpo += '\n';
                 }
-                corpo += 'Segue o PDF completo em anexo.\nPara aprovação, me envie uma mensagem aqui mesmo!';
+                
+                const criticoItens = c.itens.filter(i => i.status === 'critico');
+                if (criticoItens.length > 0) {
+                    corpo += 'Itens URGENTES:\n';
+                    criticoItens.forEach(i => {
+                        corpo += '  !! ' + i.nome;
+                        if (i.obs) corpo += ' - ' + i.obs;
+                        corpo += '\n';
+                    });
+                    corpo += '\n';
+                }
+                
+                corpo += 'O documento completo com todos os detalhes esta em anexo.\n\n';
+                corpo += 'Para aprovacao ou duvidas, me envie uma mensagem!\n\n';
+                corpo += 'Atenciosamente,\n' + usuarioAtual.nome;
             } else {
                 corpo = saud + '\n\n';
-                corpo += '✅ Serviço realizado no seu veículo:\n\n';
+                corpo += 'Aqui e da ' + usuarioAtual.nome + '.\n\n';
+                corpo += 'CERTIFICADO - SERVICOS REALIZADOS\n';
+                corpo += '================================\n\n';
+                corpo += 'Veiculo: ' + c.veiculo + '\n';
+                corpo += 'Placa: ' + (c.placa || '-') + '\n';
+                corpo += 'Data: ' + dataHoje + '\n\n';
+                
+                if (c.servicos.length > 0) {
+                    corpo += 'Servicos Executados:\n';
+                    c.servicos.forEach(s => {
+                        corpo += '  OK ' + s + '\n';
+                    });
+                    corpo += '\n';
+                }
+                
                 const ok = c.itens.filter(i => i.status === 'ok');
                 if (ok.length > 0) {
-                    corpo += '✅ Itens OK:\n' + ok.map(i => '• ' + i.nome).join('\n') + '\n\n';
+                    corpo += 'Itens Verificados e OK:\n' + ok.map(i => '  OK ' + i.nome).join('\n') + '\n\n';
                 }
+                
                 const at = c.itens.filter(i => i.status === 'atencao');
                 if (at.length > 0) {
-                    corpo += '⚠️Fique Atento:\n' + at.map(i => '• ' + i.nome + (i.obs ? ' - ' + i.obs : '')).join('\n') + '\n\n';
+                    corpo += 'Itens para acompanhamento (nao urgentes):\n';
+                    at.forEach(i => {
+                        corpo += '  ~ ' + i.nome;
+                        if (i.obs) corpo += ' - ' + i.obs;
+                        corpo += '\n';
+                    });
+                    corpo += '\n';
+                }
+                
+                if (c.garantia) {
+                    corpo += 'Garantia: ' + c.garantia + '\n';
                 }
                 if (c.proxima) {
-                    corpo += '📅 Próxima revisão: ' + c.proxima + '\n\n';
+                    corpo += 'Proxima revisao: ' + c.proxima + '\n';
                 }
-                corpo += 'Segue o certificado completo em anexo.';
+                
+                corpo += '\nO certificado completo esta em anexo.\n\n';
+                corpo += 'Obrigado pela confianca!\nAbracos,\n' + usuarioAtual.nome;
             }
 
             document.getElementById('waPreview').textContent = corpo;
@@ -1809,37 +1905,39 @@
                     y = 20;
                 }
                 
-                if (idx % 2 === 0) {
-                    doc.setFillColor(250, 250, 250);
-                    doc.rect(12, y - 4, 186, 8, 'F');
+                let corBorda, corFundo;
+                if (item.status === 'ok') {
+                    corBorda = [22, 163, 74];
+                    corFundo = [240, 255, 240];
+                } else if (item.status === 'atencao') {
+                    corBorda = [202, 138, 4];
+                    corFundo = [255, 250, 240];
+                } else {
+                    corBorda = [220, 38, 38];
+                    corFundo = [255, 245, 245];
                 }
                 
-                doc.setFont('helvetica', 'normal');
+                doc.setFillColor(corFundo[0], corFundo[1], corFundo[2]);
+                doc.roundedRect(12, y - 4, 186, 8, 1, 1, 'F');
+                doc.setDrawColor(corBorda[0], corBorda[1], corBorda[2]);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(12, y - 4, 186, 8, 1, 1, 'S');
+                
+                doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
-                doc.setTextColor(50, 50, 50);
+                doc.setTextColor(corBorda[0], corBorda[1], corBorda[2]);
                 xPos = 15;
                 doc.text(item.nome || '-', xPos + 27.5, y, { align: 'center' });
                 xPos += colWidths[0];
                 
-                if (item.status === 'ok') {
-                    doc.setTextColor(22, 163, 74);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('✓ OK', xPos + 15, y, { align: 'center' });
-                } else if (item.status === 'atencao') {
-                    doc.setTextColor(202, 138, 4);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('⚠ ATENÇÃO', xPos + 15, y, { align: 'center' });
-                } else {
-                    doc.setTextColor(220, 38, 38);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('✖ CRÍTICO', xPos + 15, y, { align: 'center' });
-                }
+                let labelStatus = item.status === 'ok' ? '✓ APROVADO' : item.status === 'atencao' ? '⚠ ATENÇÃO' : '✖ CRÍTICO';
+                doc.text(labelStatus, xPos + 15, y, { align: 'center' });
                 xPos += colWidths[1];
                 
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(100, 100, 100);
                 doc.text(item.obs || '-', xPos + 50, y, { align: 'center' });
-                y += 8;
+                y += 10;
             });
             y += 5;
             
@@ -1854,22 +1952,37 @@
                 y += 12;
             }
             
-            doc.setFillColor(245, 245, 245);
+            doc.setFillColor(220, 38, 38);
             doc.roundedRect(12, y, 186, 10, 2, 2, 'F');
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(50, 50, 50);
+            doc.setTextColor(255, 255, 255);
             doc.text('SERVIÇOS ' + (tipo === 'orcamento' ? 'IDENTIFICADOS' : 'REALIZADOS'), 15, y + 7);
             y += 15;
+            
+            const coresServicos = [
+                [220, 38, 38],    // vermelho
+                [37, 99, 235],    // azul
+                [34, 197, 94],    // verde
+                [168, 85, 247],   // roxo
+                [234, 179, 8],    // amarelo
+                [20, 184, 166],   // teal
+                [249, 115, 22],   // laranja
+                [236, 72, 153],   // rosa
+            ];
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             if (c.servicos.length > 0) {
-                c.servicos.forEach(s => {
-                    doc.setFillColor(255, 255, 255);
-                    doc.rect(14, y - 3, 4, 4, 'F');
-                    doc.text('• ' + s, 20, y);
-                    y += 6;
+                c.servicos.forEach((s, idx) => {
+                    const cor = coresServicos[idx % coresServicos.length];
+                    doc.setFillColor(cor[0], cor[1], cor[2]);
+                    doc.roundedRect(14, y - 3, 90, 6, 1, 1, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(s.substring(0, 25), 18, y);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text((tipo === 'orcamento' ? '→ Executar' : '✓ Concluído'), 110, y);
+                    y += 8;
                 });
             } else {
                 doc.setTextColor(150, 150, 150);
@@ -1964,6 +2077,25 @@
             document.querySelectorAll('.modal .tab').forEach((t, i) => {
                 t.classList.toggle('active', (i === 0 && aba === 'docLaudo') || (i === 1 && aba === 'docWhatsapp'));
             });
+        }
+
+        function downloadPdf() {
+            if (pdfBlob) {
+                const c = clientes[clienteAtual];
+                const oficina = usuarioAtual.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const cliente = c.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const veiculo = c.veiculo.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const tipoDoc = tipoLaudo === 'orcamento' ? 'Avaliacao' : 'Certificado';
+                const nomeArquivo = oficina + '_' + cliente + '_' + veiculo + '_' + tipoDoc + '.pdf';
+                const url = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nomeArquivo;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('Gere o documento primeiro.');
+            }
         }
 
         function enviarWhatsApp() {
