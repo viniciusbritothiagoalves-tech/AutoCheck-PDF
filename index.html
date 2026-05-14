@@ -17,33 +17,41 @@
             --success: #16a34a;
             --warning: #ca8a04;
             --danger: #dc2626;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border: #475569;
+            --bg-dark: #050505;
+            --bg-card: #121212;
+            --bg-input: #1a1a1a;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --plan-price: #22c55e;
         }
         
-        body { background: var(--bg-dark); color: var(--text); min-height: 100vh; }
+        @media (min-width: 768px) {
+            :root { --scale: 1; }
+        }
+        @media (max-width: 767px) {
+            :root { --scale: 1.1; }
+        }
+        
+        body { background: var(--bg-dark); color: var(--text); min-height: 100vh; font-size: calc(14px * var(--scale)); }
         
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
         
         .logo-area { text-align: center; margin-bottom: 30px; }
-        .logo-area h1 { font-size: 32px; color: var(--branco); font-weight: 700; }
+        .logo-area h1 { font-size: calc(38px * var(--scale)); color: var(--branco); font-weight: 700; }
         .logo-area h1 span { color: var(--vermelho); }
-        .logo-area p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .logo-area p { color: var(--text-muted); font-size: calc(16px * var(--scale)); margin-top: 8px; }
         
         .card { background: var(--bg-card); border-radius: 12px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); }
         
-        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--branco); }
+        .card-title { font-size: calc(22px * var(--scale)); font-weight: 600; margin-bottom: 20px; color: var(--branco); }
         
         .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
         
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .form-group label { font-size: calc(15px * var(--scale)); color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea {
-            background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-size: 14px;
+            background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: var(--text); font-size: calc(15px * var(--scale));
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
         
@@ -51,26 +59,28 @@
         .input-senha input { width: 100%; padding-right: 40px; }
         .input-senha .toggle-senha {
             position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 18px; padding: 0;
+            background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 14px; padding: 0;
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
         }
+        .input-senha .toggle-senha svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
         
-        .btn { background: var(--primary); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn { background: var(--primary); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-size: calc(15px * var(--scale)); font-weight: 600; cursor: pointer; }
         .btn:hover { background: var(--primary-dark); }
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); color: #000; }
         .btn-danger { background: var(--danger); }
-        .btn-sm { padding: 8px 12px; font-size: 12px; }
+        .btn-sm { padding: 10px 16px; font-size: calc(13px * var(--scale)); }
         .btn-block { width: 100%; }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab { padding: 10px 20px; background: var(--bg-input); border: none; color: var(--text-muted); border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; background: var(--bg-input); border: none; color: var(--text-muted); border-radius: 8px; cursor: pointer; font-size: calc(14px * var(--scale)); }
         .tab.active { background: var(--primary); color: #fff; }
         
-        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-        .service-item { background: var(--bg-input); padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .service-item { background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: calc(14px * var(--scale)); display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .service-item.selected { border-color: var(--primary); background: rgba(220, 38, 38, 0.2); }
         .service-item input { accent-color: var(--primary); }
         
@@ -150,10 +160,10 @@
     <div id="loginScreen" class="container" style="max-width: 400px; padding-top: 50px;">
         <div class="logo-area">
             <h1>AutoCheck <span>PDF</span></h1>
-            <p>Sistema de Avaliação e Gestão de Serviços</p>
+            <p>🔧 Sistema de Gestão para Oficinas</p>
         </div>
         <div class="card">
-            <h2 style="text-align: center; color: var(--branco); margin-bottom: 20px;">Acessar</h2>
+            <h2 style="text-align: center; color: var(--branco); margin-bottom: 20px;">Entrar</h2>
             <div class="form-group" style="margin-bottom: 15px;">
                 <label>Email</label>
                 <input type="email" id="loginEmail" placeholder="seu@email.com">
@@ -161,7 +171,9 @@
             <div class="form-group input-senha" style="margin-bottom: 20px;">
                 <label>Senha</label>
                 <input type="password" id="loginSenha" placeholder="••••••">
-                <button type="button" class="toggle-senha" onclick="toggleSenha('loginSenha', this)">👁️</button>
+                <button type="button" class="toggle-senha" onclick="toggleSenha('loginSenha', this)">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
             </div>
             <button class="btn btn-block" onclick="fazerLogin()">Entrar</button>
             <div style="text-align: center; margin-top: 15px;">
@@ -206,7 +218,9 @@
             <div class="form-group input-senha" style="margin-bottom: 10px;">
                 <label>Nova Senha</label>
                 <input type="password" id="novaSenhaRec" placeholder="••••••" oninput="verificarSenhaNova(this.value)">
-                <button type="button" class="toggle-senha" onclick="toggleSenha('novaSenhaRec', this)">👁️</button>
+                <button type="button" class="toggle-senha" onclick="toggleSenha('novaSenhaRec', this)">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
             </div>
             <div id="senhaRequisitoRec" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                 <span id="r-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dígitos</span>
@@ -238,7 +252,9 @@
             <div class="form-group input-senha" style="margin-bottom: 10px;">
                 <label>Criar Senha</label>
                 <input type="password" id="cadSenha" placeholder="••••••" oninput="verificarSenha(this.value)">
-                <button type="button" class="toggle-senha" onclick="toggleSenha('cadSenha', this)">👁️</button>
+                <button type="button" class="toggle-senha" onclick="toggleSenha('cadSenha', this)">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
             </div>
             <div id="senhaRequisito" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                 <span id="s-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dígitos</span>
@@ -314,20 +330,20 @@
                     <p style="color: var(--text-muted); font-size: 13px;" id="planoInfo">Plano: Ativo</p>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-sm" onclick="editarPerfil()">👤 Perfil</button>
-                    <button class="btn btn-sm" onclick="mostrarPlanos()">💳 Planos</button>
-                    <button class="btn btn-sm btn-danger" onclick="logout()">Sair</button>
+                    <button class="btn btn-sm" onclick="editarPerfil()">⚙️ Perfil</button>
+                    <button class="btn btn-sm" onclick="mostrarPlanos()">📋 Planos</button>
+                    <button class="btn btn-sm btn-danger" onclick="logout()">⏻ Sair</button>
                 </div>
             </div>
         </div>
 
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                <h3 class="card-title" style="margin: 0;">Atendimentos</h3>
-                <button class="btn btn-success" id="btnNovoCliente" onclick="novoCliente()">+ Novo Cliente</button>
+                <h3 class="card-title" style="margin: 0;">🔧 Meus Clientes</h3>
+                <button class="btn btn-success" id="btnNovoCliente" onclick="novoCliente()">➕ Novo Cliente</button>
             </div>
             <div id="clientesLista" class="client-list"></div>
-            <p id="semClientes" class="hidden" style="text-align: center; color: var(--text-muted); padding: 30px;">Nenhum cliente cadastrado</p>
+            <p id="semClientes" class="hidden" style="text-align: center; color: var(--text-muted); padding: 40px; font-size: 16px;">Nenhum cliente cadastrado ainda</p>
         </div>
     </div>
 
@@ -339,38 +355,43 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
             <div class="plan-card" id="plan-basico" style="border: 2px solid var(--border);">
-                <h3 style="font-size: 20px; color: var(--branco);">Básico</h3>
-                <div class="price" style="font-size: 28px; color: var(--primary); margin: 10px 0;">R$ 97<span style="font-size: 14px;">/mês</span></div>
-                <ul class="features" style="margin-bottom: 15px;">
-                    <li>📱 1 dispositivo</li>
+                <h3 style="font-size: 22px; color: var(--branco);">Básico</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 97<span style="font-size: 16px;">/mês</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>🔧 1 dispositivo</li>
                     <li>📄 PDFs ilimitados</li>
                     <li>📑 Geração de PDF</li>
-                    <li>💬 WhatsApp automático</li>
+                    <li>📱 WhatsApp automático</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('basico')">Assinar Agora</button>
             </div>
             
             <div class="plan-card" id="plan-pro" style="border: 2px solid var(--primary); background: rgba(220, 38, 38, 0.1);">
-                <div style="text-align: center; background: var(--primary); color: #fff; padding: 5px; border-radius: 8px 8px 0 0; margin: -25px -25px 15px -25px; font-size: 12px; font-weight: 600;">MAIS POPULAR</div>
-                <h3 style="font-size: 20px; color: var(--branco);">Profissional</h3>
-                <div class="price" style="font-size: 28px; color: var(--primary); margin: 10px 0;">R$ 147<span style="font-size: 14px;">/mês</span></div>
-                <ul class="features" style="margin-bottom: 15px;">
-                    <li>📱 3 dispositivos</li>
+                <div style="text-align: center; background: var(--primary); color: #fff; padding: 6px; border-radius: 8px 8px 0 0; margin: -25px -25px 15px -25px; font-size: 12px; font-weight: 600;">MAIS POPULAR</div>
+                <h3 style="font-size: 22px; color: var(--branco);">Profissional</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 147<span style="font-size: 16px;">/mês</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>🔧 3 dispositivos</li>
                     <li>📄 PDFs ilimitados</li>
                     <li>📑 Geração de PDF</li>
-                    <li>💬 WhatsApp automático</li>
+                    <li>📱 WhatsApp automático</li>
                     <li>📊 Histórico completo</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('pro')">Assinar Agora</button>
             </div>
             
             <div class="plan-card" id="plan-master" style="border: 2px solid var(--border);">
-                <h3 style="font-size: 20px; color: var(--branco);">Gold</h3>
-                <div class="price" style="font-size: 28px; color: var(--primary); margin: 10px 0;">R$ 197<span style="font-size: 14px;">/mês</span></div>
-                <ul class="features" style="margin-bottom: 15px;">
-                    <li>📱 5+ dispositivos</li>
+                <h3 style="font-size: 22px; color: var(--branco);">Gold</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 197<span style="font-size: 16px;">/mês</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>🔧 5+ dispositivos</li>
                     <li>✅ Tudo do Profissional</li>
                     <li>🎨 Logo personalizado</li>
+                    <li>⭐ Prioridade suporte</li>
+                </ul>
+                <button class="btn btn-success btn-block" onclick="irParaPagamento('master')">Assinar Agora</button>
+            </div>
+        </div>
                     <li>⭐ Prioridade suporte</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('master')">Assinar Agora</button>
@@ -397,7 +418,9 @@
             <div class="form-group input-senha" style="margin-bottom: 15px;">
                 <label>Nova Senha (deixe em branco para manter)</label>
                 <input type="password" id="editSenha" placeholder="••••••">
-                <button type="button" class="toggle-senha" onclick="toggleSenha('editSenha', this)">👁️</button>
+                <button type="button" class="toggle-senha" onclick="toggleSenha('editSenha', this)">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
                 <label>WhatsApp</label>
@@ -534,6 +557,32 @@
 
     <div id="autoSaveMsg" class="auto-save">✓ Salvo</div>
 
+    <div id="ajudaModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: var(--branco); margin: 0;">Bem-vindo ao AutoCheck!</h3>
+                <button onclick="fecharAjuda()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="color: var(--text); font-size: 15px; line-height: 1.6;">
+                <p style="margin-bottom: 15px;">Parece que você ainda não assinou um plano. <strong>Assine um plano para desbloquear todas as funcionalidades:</strong></p>
+                
+                <div style="background: var(--bg-input); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin-bottom: 10px;"><strong>📋 Como funciona:</strong></p>
+                    <ul style="margin-left: 20px; color: var(--text-muted);">
+                        <li>Escolha um plano abaixo e clique em "Assinar Agora"</li>
+                        <li>Após o pagamento, você terá acesso completo ao sistema</li>
+                        <li>Adicione clientes e gere relatórios profissionais</li>
+                        <li>Envie documentos via WhatsApp automaticamente</li>
+                    </ul>
+                </div>
+                
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center;">Clique no botão abaixo para escolher seu plano!</p>
+            </div>
+            <button class="btn btn-success btn-block" onclick="fecharAjuda(); mostrarPlanos();">Ver Planos</button>
+            <button class="btn btn-block" onclick="fecharAjuda()" style="margin-top: 10px; background: var(--bg-input);">Agora não</button>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
         let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
@@ -632,16 +681,31 @@
             renderizarServicos();
             setupInactivityTracker();
             restaurarSessao();
+            verificarMostrarAjuda();
+        }
+
+        function verificarMostrarAjuda() {
+            const jaViuAjuda = localStorage.getItem('jaViuAjuda');
+            if (!jaViuAjuda && usuarioAtual && !usuarioAtual.pago) {
+                setTimeout(() => {
+                    document.getElementById('ajudaModal').classList.add('active');
+                }, 1000);
+            }
+        }
+
+        function fecharAjuda() {
+            document.getElementById('ajudaModal').classList.remove('active');
+            localStorage.setItem('jaViuAjuda', 'true');
         }
 
         function toggleSenha(inputId, btn) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
                 input.type = 'text';
-                btn.textContent = '🙈';
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
             } else {
                 input.type = 'password';
-                btn.textContent = '👁️';
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
             }
         }
 
@@ -741,6 +805,7 @@
                 banner.classList.remove('hidden');
                 if (btnNovo) btnNovo.onclick = function() { alert('Assine um plano para adicionar clientes!'); };
                 if (planoInfo) planoInfo.textContent = 'Plano: Não ativo';
+                verificarMostrarAjuda();
             } else {
                 banner.classList.add('hidden');
                 if (btnNovo) btnNovo.onclick = novoCliente;
@@ -823,33 +888,14 @@
         function verificarRetornoStripe() {
             const urlParams = new URLSearchParams(window.location.search);
             const success = urlParams.get('success');
+            const canceled = urlParams.get('canceled');
             const planoPendente = localStorage.getItem('planoPendente');
             
-            if (success === 'true' && planoPendente) {
+            if (planoPendente && (success === 'true' || canceled === 'true')) {
                 localStorage.removeItem('planoPendente');
-                
-                usuarioAtual.pago = true;
-                usuarioAtual.plano = planoPendente;
-                
-                const idx = usuarios.findIndex(u => u.email === usuarioAtual.email);
-                if (idx !== -1) {
-                    usuarios[idx].pago = true;
-                    usuarios[idx].plano = planoPendente;
-                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
-                }
-                
-                usuarioPago = true;
-                verificarPagamento();
                 window.history.replaceState({}, document.title, window.location.pathname);
-                alert('Pagamento confirmado! Plano ativado com sucesso.');
-                return true;
-            }
-            
-            if (planoPendente && !usuarioPago && !success) {
-                const confirmar = confirm('Você voltou do pagamento!\n\nClique OK para confirmar que o pagamento foi realizado e ativar seu plano.');
-                if (confirmar) {
-                    localStorage.removeItem('planoPendente');
-                    
+                
+                if (success === 'true' && planoPendente) {
                     usuarioAtual.pago = true;
                     usuarioAtual.plano = planoPendente;
                     
@@ -862,15 +908,22 @@
                     
                     usuarioPago = true;
                     verificarPagamento();
-                    alert('Plano ativado com sucesso! Agora você pode usar o sistema.');
-                } else {
-                    localStorage.removeItem('planoPendente');
+                    alert('Pagamento confirmado! Plano ativado com sucesso.');
+                } else if (canceled === 'true') {
+                    alert('Pagamento cancelado. Escolha um plano quando quiser.');
                 }
+                return true;
+            }
+            
+            if (planoPendente && !success && !canceled) {
+                localStorage.removeItem('planoPendente');
             }
             return false;
         }
 
-        const retornoProcessado = verificarRetornoStripe();
+        if (typeof retornoProcessado === 'undefined') {
+            setTimeout(verificarRetornoStripe, 500);
+        }
 
         function mostrarLogin() {
             document.getElementById('loginScreen').classList.remove('hidden');
