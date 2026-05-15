@@ -1436,7 +1436,7 @@
         }
 
         function renderizarServicos() {
-            const c = clientes[clienteAtual];
+            const c = (clienteAtual !== null && clientes[clienteAtual]) ? clientes[clienteAtual] : {};
             const servicosAtuais = c.servicos || [];
             
             document.getElementById('servicesGrid').innerHTML = servicosLista.map(s => {
