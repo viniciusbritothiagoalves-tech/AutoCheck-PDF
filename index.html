@@ -553,34 +553,15 @@
     <div id="modalPreview" class="modal">
         <div class="modal-content">
             <h3 id="modalTitulo">Documento</h3>
-            <div class="tabs">
-                <button class="tab active" onclick="mostrarDocAba('docLaudo')">Documento</button>
-                <button class="tab" onclick="mostrarDocAba('docWhatsapp')">WhatsApp</button>
+            <div class="tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="tab active" style="flex: 1; pointer-events: none; border-bottom: 2px solid var(--danger);">Documento PDF</button>
+                <button class="tab" onclick="enviarWhatsApp()" style="flex: 1; background: #25d366; color: #fff; border: 1px solid #25d366; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px;">💬 Enviar via WhatsApp</button>
             </div>
             <div id="docLaudo" class="doc-preview"></div>
-            <div id="docWhatsapp" class="hidden" style="padding: 20px; background: linear-gradient(135deg, #075e54 0%, #128c7e 100%); border-radius: 12px;">
-                <div style="background: #fff; border-radius: 12px; padding: 15px; max-width: 350px; margin: 0 auto;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                        <div style="width: 40px; height: 40px; background: #25d366; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: #fff; font-weight: bold;">W</span>
-                        </div>
-                        <div>
-                            <div style="font-weight: 600; font-size: 14px; color: #333;">WhatsApp</div>
-                            <div style="font-size: 11px; color: #888;">Mensagem automática</div>
-                        </div>
-                    </div>
-                    <div id="waPreview" style="background: #f0f0f0; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #222; word-wrap: break-word; white-space: pre-wrap;"></div>
-                </div>
-                <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn btn-warning" onclick="downloadPdf()" style="padding: 12px 20px; font-size: 14px;">📥 Baixar PDF</button>
-                    <button class="btn btn-success" onclick="enviarWhatsApp()" style="background: #25d366; padding: 12px 30px; font-size: 14px;">💬 Abrir WhatsApp</button>
-                </div>
-            </div>
             <div class="btn-group">
                 <button class="btn" onclick="fecharModal()">Fechar</button>
                 <button class="btn btn-warning" onclick="downloadPdf()">⬇️ Baixar PDF</button>
                 <button class="btn btn-success" onclick="imprimirDoc()">🖨️ Imprimir</button>
-                <button class="btn" style="background: #25d366;" onclick="enviarWhatsApp()">💬 Abrir WhatsApp</button>
             </div>
         </div>
     </div>
@@ -2162,8 +2143,11 @@
             const tipoDocumento = tipoLaudo === 'orcamento' ? 'AVALIAÇÃO DO VEÍCULO' : 'CERTIFICADO DE CONCLUSÃO';
             const tituloDoc = tipoLaudo === 'orcamento' ? 'Avaliação' : 'Certificado';
             
+            const logoHtml = usuarioAtual.logo ? `<img src="${usuarioAtual.logo}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">` : '';
+            
             const docLaudo = `
                 <div class="header">
+                    ${logoHtml}
                     <h1>${usuarioAtual.nome}</h1>
                     <p class="tipo-doc">${tipoDocumento}</p>
                 </div>
@@ -2317,6 +2301,14 @@
             doc.setDrawColor(0, 0, 0);
             doc.setLineWidth(0.5);
             doc.line(margemEsq, 15, 195, 15);
+            
+            if (usuarioAtual.logo) {
+                try {
+                    const match = usuarioAtual.logo.match(/^data:image\/(jpeg|png|webp);base64,/);
+                    const format = match ? match[1].toUpperCase() : 'PNG';
+                    doc.addImage(usuarioAtual.logo, format, margemEsq, 18, 40, 20);
+                } catch(e) { console.error('Erro logo pdf', e); }
+            }
             
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
@@ -2571,15 +2563,14 @@
         }
 
         function enviarWhatsApp() {
-            const corpo = document.getElementById('waPreview').innerText;
-            const c = clientes[clienteAtual];
-            const waNum = c.whatsapp ? c.whatsapp.replace(/\D/g, '') : '';
-            if (!waNum) {
-                alert('Cliente não possui WhatsApp cadastrado.');
+            if (!whatsappLink) {
+                const c = clientes[clienteAtual];
+                if (!c.whatsapp) {
+                    alert('Cliente não possui WhatsApp cadastrado.');
+                }
                 return;
             }
-            const link = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo);
-            window.open(link, '_blank');
+            window.open(whatsappLink, '_blank');
         }
 
         function imprimirDoc() {
