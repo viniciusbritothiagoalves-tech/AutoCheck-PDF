@@ -116,16 +116,20 @@
         .modal-content h3 { color: var(--branco); margin-bottom: 20px; }
         
         .doc-preview { background: #fff; color: #222; padding: 25px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-size: 11px; }
-        .doc-preview h1 { text-align: center; font-size: 18px; margin-bottom: 5px; color: #000; }
-        .doc-preview h2 { font-size: 13px; margin: 12px 0 8px; background: #f0f0f0; padding: 5px; color: #000; }
-        .doc-preview table { width: 100%; border-collapse: collapse; }
-        .doc-preview th { background: #1a1a2e; color: #fff; padding: 6px; text-align: left; font-size: 10px; }
-        .doc-preview td { padding: 5px; border: 1px solid #ddd; font-size: 10px; }
+        .doc-preview .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .doc-preview .header h1 { text-align: center; font-size: 20px; margin-bottom: 5px; color: #000; font-weight: bold; }
+        .doc-preview .tipo-doc { text-align: center; font-size: 14px; color: #555; font-weight: 600; margin: 0; padding: 5px 0; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-preview h2 { font-size: 12px; margin: 12px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #000; font-weight: bold; }
+        .doc-preview table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .doc-preview th { background: #f5f5f5; color: #333; padding: 6px; text-align: left; font-size: 10px; border: 1px solid #ccc; }
+        .doc-preview td { padding: 5px; border: 1px solid #ccc; font-size: 10px; color: #333; }
         .doc-preview .status-ok { color: #16a34a; font-weight: 700; }
         .doc-preview .status-atencao { color: #ca8a04; font-weight: 700; }
         .doc-preview .status-critico { color: #dc2626; font-weight: 700; }
-        .doc-preview .urgente { background: #fee; color: #dc2626; font-weight: 700; padding: 8px; border-radius: 4px; }
-        .doc-preview .assinatura { margin-top: 30px; text-align: right; }
+        .doc-preview .urgente { color: #dc2626; font-weight: 700; padding: 8px; border-left: 4px solid #dc2626; background: #fff5f5; }
+        .doc-preview .obs-box { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-size: 10px; line-height: 1.5; max-width: 100%; overflow: visible; }
+        .doc-preview .assinatura { margin-top: 30px; text-align: right; color: #555; }
+        .doc-preview .assinatura p { margin: 5px 0; font-size: 10px; }
         .doc-preview .linha { border-bottom: 1px solid #333; width: 200px; display: inline-block; margin-top: 40px; }
         
         .wa-preview { background: #e5ddd6; padding: 15px; border-radius: 8px; }
@@ -1564,21 +1568,47 @@
                 sem.classList.remove('hidden');
             } else {
                 sem.classList.add('hidden');
-                lista.innerHTML = clientes.map((c, i) => `
-                    <div class="client-item" onclick="abrirLaudo(${i})">
+                lista.innerHTML = clientes.map((c, i) => {
+                    const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km }];
+                    const totalDocs = c.historicoPdfs ? c.historicoPdfs.length : 0;
+                    
+                    return `
+                    <div class="client-item" onclick="abrirLaudo(${i}, 0)">
                         <div class="client-info">
                             <h3>${c.nome}</h3>
-                            <p>${c.veiculo} ${c.placa ? '- ' + c.placa : ''}</p>
-                            ${(c.historicoPdfs && c.historicoPdfs.length > 0) ? '<p style="font-size:11px;color:var(--success)">📄 ' + c.historicoPdfs.length + ' documento(s)</p>' : ''}
+                            ${veiculos.map((v, vi) => `
+                                <p style="margin: 5px 0; font-size: 14px;">
+                                    🚗 ${v.veiculo || 'Sem veículo'} ${v.placa ? '- ' + v.placa : ''}
+                                    ${v.ano ? '(' + v.ano + ')' : ''}
+                                </p>
+                            `).join('')}
+                            ${totalDocs > 0 ? '<p style="font-size:11px;color:var(--success)">📄 ' + totalDocs + ' documento(s)</p>' : ''}
                         </div>
-                        <div style="display:flex;gap:5px;">
-                            ${(c.historicoPdfs && c.historicoPdfs.length > 0) ? '<button class="btn btn-sm" style="background:var(--success)" onclick="event.stopPropagation(); verHistorico(' + i + ')">📄</button>' : ''}
-                            <button class="btn btn-sm" onclick="event.stopPropagation(); abrirLaudo(${i})">Atender</button>
+                        <div style="display:flex;flex-direction:column;gap:5px;">
+                            ${veiculos.length > 0 ? `<button class="btn btn-sm" onclick="event.stopPropagation(); abrirLaudo(${i}, 0)">Atender ${veiculos[0].placa || ''}</button>` : ''}
+                            <button class="btn btn-sm" style="background:var(--primary)" onclick="event.stopPropagation(); adicionarVeiculoExistente(${i})">+ Novo Veículo</button>
+                            ${totalDocs > 0 ? '<button class="btn btn-sm" style="background:var(--success)" onclick="event.stopPropagation(); verHistorico(' + i + ')">📄</button>' : ''}
                             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); excluirCliente(${i})">×</button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
+        }
+
+        function adicionarVeiculoExistente(idx) {
+            clienteAtual = idx;
+            window.modoNovoVeiculo = true;
+            document.getElementById('tituloForm').textContent = 'Adicionar Novo Veículo';
+            document.getElementById('cliNome').value = clientes[idx].nome;
+            document.getElementById('cliNome').disabled = true;
+            document.getElementById('cliWhatsapp').value = clientes[idx].whatsapp || '';
+            document.getElementById('cliVeiculo').value = '';
+            document.getElementById('cliPlaca').value = '';
+            document.getElementById('cliAno').value = '';
+            document.getElementById('cliKm').value = '';
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.remove('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
         }
 
         function novoCliente() {
@@ -1588,7 +1618,9 @@
                 return;
             }
             clienteAtual = null;
+            window.modoNovoVeiculo = false;
             document.getElementById('tituloForm').textContent = 'Novo Cliente';
+            document.getElementById('cliNome').disabled = false;
             document.getElementById('cliNome').value = '';
             document.getElementById('cliWhatsapp').value = '';
             document.getElementById('cliVeiculo').value = '';
@@ -1600,13 +1632,13 @@
             document.getElementById('formLaudo').classList.add('hidden');
         }
 
-        function salvarCliente() {
+        function salvarCliente(novoVeiculo = false) {
             const nome = document.getElementById('cliNome').value;
             if (!nome) { alert('Informe o nome do cliente'); return; }
 
-            const dados = {
-                nome,
-                whatsapp: document.getElementById('cliWhatsapp').value,
+            const ehNovoVeiculo = window.modoNovoVeiculo === true;
+            
+            const veiculoData = {
                 veiculo: document.getElementById('cliVeiculo').value,
                 placa: document.getElementById('cliPlaca').value.toUpperCase(),
                 ano: document.getElementById('cliAno').value,
@@ -1616,18 +1648,88 @@
                 garantia: '',
                 proxima: '',
                 obs: '',
-                ultimaAtt: new Date().toISOString(),
-                historicoPdfs: []
+                ultimaAtt: new Date().toISOString()
             };
 
             if (clienteAtual !== null) {
-                clientes[clienteAtual] = { ...clientes[clienteAtual], ...dados };
+                if (!clientes[clienteAtual].veiculos) {
+                    clientes[clienteAtual].veiculos = [{
+                        veiculo: clientes[clienteAtual].veiculo,
+                        placa: clientes[clienteAtual].placa,
+                        ano: clientes[clienteAtual].ano,
+                        km: clientes[clienteAtual].km,
+                        itens: clientes[clienteAtual].itens || [],
+                        servicos: clientes[clienteAtual].servicos || [],
+                        garantia: clientes[clienteAtual].garantia || '',
+                        proxima: clientes[clienteAtual].proxima || '',
+                        obs: clientes[clienteAtual].obs || '',
+                        ultimaAtt: clientes[clienteAtual].ultimaAtt || new Date().toISOString()
+                    }];
+                }
+                
+                if (ehNovoVeiculo) {
+                    clientes[clienteAtual].veiculos.push(veiculoData);
+                    clientes[clienteAtual].ultimaAtt = new Date().toISOString();
+                    window.modoNovoVeiculo = false;
+                } else {
+                    if (clientes[clienteAtual].veiculos && clientes[clienteAtual].veiculos.length > 0) {
+                        clientes[clienteAtual].veiculos[0] = { ...clientes[clienteAtual].veiculos[0], ...veiculoData };
+                    } else {
+                        clientes[clienteAtual].veiculos = [veiculoData];
+                    }
+                    clientes[clienteAtual].nome = nome;
+                    clientes[clienteAtual].whatsapp = document.getElementById('cliWhatsapp').value;
+                }
             } else {
-                clientes.push(dados);
+                const novoCliente = {
+                    nome,
+                    whatsapp: document.getElementById('cliWhatsapp').value,
+                    veiculos: [veiculoData],
+                    historicoPdfs: []
+                };
+                clientes.push(novoCliente);
             }
 
             salvarDados();
             mostrarClientes();
+        }
+
+        function adicionarOutroVeiculo() {
+            if (clienteAtual !== null && clientes[clienteAtual]) {
+                document.getElementById('tituloForm').textContent = 'Adicionar Novo Veículo';
+                document.getElementById('cliNome').value = clientes[clienteAtual].nome;
+                document.getElementById('cliNome').disabled = true;
+                document.getElementById('cliWhatsapp').value = clientes[clienteAtual].whatsapp || '';
+                document.getElementById('cliVeiculo').value = '';
+                document.getElementById('cliPlaca').value = '';
+                document.getElementById('cliAno').value = '';
+                document.getElementById('cliKm').value = '';
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('formCliente').classList.remove('hidden');
+                document.getElementById('formLaudo').classList.add('hidden');
+                window.modoNovoVeiculo = true;
+            }
+        }
+
+        function novoCliente() {
+            if (!usuarioPago) {
+                alert('Assine um plano para adicionar clientes!');
+                mostrarPlanos();
+                return;
+            }
+            clienteAtual = null;
+            window.modoNovoVeiculo = false;
+            document.getElementById('tituloForm').textContent = 'Novo Cliente';
+            document.getElementById('cliNome').disabled = false;
+            document.getElementById('cliNome').value = '';
+            document.getElementById('cliWhatsapp').value = '';
+            document.getElementById('cliVeiculo').value = '';
+            document.getElementById('cliPlaca').value = '';
+            document.getElementById('cliAno').value = '';
+            document.getElementById('cliKm').value = '';
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.remove('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
         }
 
         function excluirCliente(idx) {
@@ -1643,22 +1745,27 @@
             }
         }
 
-        function abrirLaudo(idx) {
+        let veiculoAtual = 0;
+
+        function abrirLaudo(idx, veiculoIdx = 0) {
             if (!usuarioPago) {
                 alert('Assine um plano para atender clientes!');
                 mostrarPlanos();
                 return;
             }
             clienteAtual = idx;
+            veiculoAtual = veiculoIdx;
             const c = clientes[idx];
-            document.getElementById('laudoTitulo').textContent = `${c.nome} - ${c.veiculo}`;
+            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km }];
+            const v = veiculos[veiculoIdx] || veiculos[0];
+            document.getElementById('laudoTitulo').textContent = `${c.nome} - ${v.veiculo} ${v.placa ? '- ' + v.placa : ''}`;
             document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('formCliente').classList.add('hidden');
             document.getElementById('formLaudo').classList.remove('hidden');
             mudarAba('itens');
             renderizarItens();
             
-            const servicosNaoLista = c.servicos ? c.servicos.filter(s => {
+            const servicosNaoLista = v.servicos ? v.servicos.filter(s => {
                 const nome = typeof s === 'string' ? s : s.nome;
                 return !servicosLista.includes(nome);
             }) : [];
@@ -1673,7 +1780,7 @@
             }
             
             document.querySelectorAll('#servicesGrid input').forEach(cb => {
-                const servicoObj = c.servicos ? c.servicos.find(s => (typeof s === 'string' ? s : s.nome) === cb.value) : null;
+                const servicoObj = v.servicos ? v.servicos.find(s => (typeof s === 'string' ? s : s.nome) === cb.value) : null;
                 const checked = servicoObj ? true : false;
                 cb.checked = checked;
                 if (checked) {
@@ -1788,22 +1895,28 @@
 
         function autoSalvar() {
             const c = clientes[clienteAtual];
+            if (!c.veiculos || c.veiculos.length === 0) {
+                c.veiculos = [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [] }];
+            }
+            const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+            
             document.querySelectorAll('.item-row').forEach((row, i) => {
-                c.itens[i].nome = row.querySelector('input').value;
-                c.itens[i].obs = row.querySelector('textarea').value;
+                v.itens[i].nome = row.querySelector('input').value;
+                v.itens[i].obs = row.querySelector('textarea').value;
             });
-            c.servicos = [];
+            v.servicos = [];
             document.querySelectorAll('#servicesGrid input:checked').forEach(cb => {
                 const parent = cb.closest('.service-item');
                 const select = parent.querySelector('.servico-urgencia');
                 const urgencia = select ? select.value : '';
-                c.servicos.push({ nome: cb.value, urgencia: urgencia });
+                v.servicos.push({ nome: cb.value, urgencia: urgencia });
             });
             const outros = document.getElementById('outrosServicos').value;
             const outrosUrgencia = document.getElementById('outrosServicosUrgencia').value;
             if (outros) {
-                c.servicos.push({ nome: outros, urgencia: outrosUrgencia });
+                v.servicos.push({ nome: outros, urgencia: outrosUrgencia });
             }
+            v.ultimaAtt = new Date().toISOString();
             c.ultimaAtt = new Date().toISOString();
             salvarDados();
             mostrarMsgSalvo();
@@ -1841,14 +1954,16 @@
 
         function gerarDocs() {
             const c = clientes[clienteAtual];
+            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [] }];
+            const v = veiculos[veiculoAtual] || veiculos[0];
             const hoje = new Date();
             const dataStr = ("0" + hoje.getDate()).slice(-2) + "/" + ("0" + (hoje.getMonth() + 1)).slice(-2) + "/" + hoje.getFullYear();
             const dataExt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-            const cr = c.itens.filter(i => i.status === 'critico');
+            const cr = v.itens ? v.itens.filter(i => i.status === 'critico') : [];
 
             let tabela = '<table><thead><tr><th>Item</th><th>Status</th><th>Observação</th></tr></thead><tbody>';
-            c.itens.forEach(item => {
+            (v.itens || []).forEach(item => {
                 let cls = item.status === 'ok' ? 'status-ok' : item.status === 'atencao' ? 'status-atencao' : 'status-critico';
                 let lbl = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : 'CRÍTICO';
                 tabela += `<tr><td>${item.nome || '-'}</td><td class="${cls}">${lbl}</td><td>${item.obs || '-'}</td></tr>`;
@@ -1856,18 +1971,23 @@
             tabela += '</tbody></table>';
 
             const urgentHtml = cr.length > 0 ? '<p class="urgente">⚠ ATENÇÃO URGENTE - Reparo Necessário</p>' : '';
-            const servHtml = c.servicos.length > 0 ? '<ul>' + c.servicos.map(s => `<li>${s}</li>`).join('') + '</ul>' : '<p>-</p>';
+            const servHtml = (v.servicos || []).length > 0 ? '<ul>' + v.servicos.map(s => `<li>${typeof s === 'string' ? s : s.nome}</li>`).join('') + '</ul>' : '<p>-</p>';
 
+            const tipoDocumento = tipoLaudo === 'orcamento' ? 'ORÇAMENTO / AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO';
+            const tituloDoc = tipoLaudo === 'orcamento' ? 'Orçamento' : 'Certificado';
+            
             const docLaudo = `
-                <h1>${usuarioAtual.nome}</h1>
-                <p style="text-align:center;color:#666">${tipoLaudo === 'orcamento' ? 'RELATÓRIO DE AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO'}</p>
+                <div class="header">
+                    <h1>${usuarioAtual.nome}</h1>
+                    <p class="tipo-doc">${tipoDocumento}</p>
+                </div>
                 <h2>Dados do Veículo</h2>
                 <table>
                     <tr><td style="width:30%"><strong>Cliente:</strong></td><td>${c.nome}</td></tr>
-                    <tr><td><strong>Veículo:</strong></td><td>${c.veiculo}</td></tr>
-                    <tr><td><strong>Placa:</strong></td><td>${c.placa || '-'}</td></tr>
-                    <tr><td><strong>Ano:</strong></td><td>${c.ano || '-'}</td></tr>
-                    <tr><td><strong>Km:</strong></td><td>${c.km || '-'}</td></tr>
+                    <tr><td><strong>Veículo:</strong></td><td>${v.veiculo || '-'}</td></tr>
+                    <tr><td><strong>Placa:</strong></td><td>${v.placa || '-'}</td></tr>
+                    <tr><td><strong>Ano:</strong></td><td>${v.ano || '-'}</td></tr>
+                    <tr><td><strong>Km:</strong></td><td>${v.km || '-'}</td></tr>
                     <tr><td><strong>Data:</strong></td><td>${dataStr}</td></tr>
                 </table>
                 <h2>Itens Inspectados</h2>
@@ -1875,119 +1995,121 @@
                 ${urgentHtml}
                 <h2>Serviços ${tipoLaudo === 'orcamento' ? 'Identificados' : 'Realizados'}</h2>
                 ${servHtml}
-                ${c.obs ? '<h2>Observações</h2><p>' + c.obs + '</p>' : ''}
+                ${v.obs ? '<h2>Observações</h2><div class="obs-box">' + v.obs.replace(/\n/g, '<br>') + '</div>' : ''}
                 <div class="assinatura">
-                    <p style="color:#666">${dataExt}</p>
+                    <p>${dataExt}</p>
                     <div class="linha"></div>
-                    <p>${usuarioAtual.nome}</p>
-                    <p style="color:#666;font-size:10px">Responsável Técnico</p>
+                    <p><strong>${usuarioAtual.nome}</strong></p>
+                    <p>Responsável Técnico</p>
                 </div>
             `;
 
             document.getElementById('docLaudo').innerHTML = docLaudo;
 
-            gerarPdfBlob(docLaudo, c.nome, tipoLaudo);
+            gerarPdfBlob(docLaudo, c.nome + ' - ' + (v.placa || v.veiculo), tipoLaudo);
 
             const dataHoje = new Date().toLocaleDateString('pt-BR');
-            let saud = c.nome ? `Olá, ${c.nome}!` : `Olá!`;
+            let saud = c.nome ? 'Olá, ' + c.nome + '!' : 'Olá!';
             let corpo = '';
             
             if (tipoLaudo === 'orcamento') {
                 corpo = saud + '\n\n';
-                corpo += 'Aqui e da ' + usuarioAtual.nome + '.\n\n';
-                corpo += 'ORCAMENTO - AVALIACAO DO VEICULO\n';
+                corpo += 'Aqui é da ' + usuarioAtual.nome + '.\n\n';
+                corpo += 'ORÇAMENTO - AVALIAÇÃO DO VEÍCULO\n';
                 corpo += '================================\n\n';
-                corpo += 'Veiculo: ' + c.veiculo + '\n';
-                corpo += 'Placa: ' + (c.placa || '-') + '\n';
+                corpo += 'Veículo: ' + (v.veiculo || '-') + '\n';
+                corpo += 'Placa: ' + (v.placa || '-') + '\n';
                 corpo += 'Data: ' + dataHoje + '\n\n';
                 
-                if (c.servicos.length > 0) {
-                    corpo += 'Servicos Necessarios:\n';
-                    c.servicos.forEach(s => {
+                if (v.servicos && v.servicos.length > 0) {
+                    corpo += 'Serviços Necessários:\n';
+                    v.servicos.forEach(s => {
                         const nomeServico = typeof s === 'string' ? s : s.nome;
                         const urgencia = typeof s === 'object' ? s.urgencia : '';
                         if (urgencia === 'critico') {
-                            corpo += '  !! ' + nomeServico + ' [URGENTE]\n';
+                            corpo += '  ⚠ ' + nomeServico + ' [URGENTE]\n';
                         } else if (urgencia === 'atencao') {
-                            corpo += '  * ' + nomeServico + ' [ATENCAO]\n';
+                            corpo += '  ✋ ' + nomeServico + ' [ATENÇÃO]\n';
                         } else {
-                            corpo += '  - ' + nomeServico + '\n';
+                            corpo += '  ✓ ' + nomeServico + '\n';
                         }
                     });
                     corpo += '\n';
                 }
                 
-                const atencaoItens = c.itens.filter(i => i.status === 'atencao');
+                const atencaoItens = (v.itens || []).filter(i => i.status === 'atencao');
                 if (atencaoItens.length > 0) {
-                    corpo += 'Itens que precisam de atencao:\n';
+                    corpo += 'Itens que precisam de atenção:\n';
                     atencaoItens.forEach(i => {
-                        corpo += '  * ' + i.nome;
+                        corpo += '  ✋ ' + i.nome;
                         if (i.obs) corpo += ' - ' + i.obs;
                         corpo += '\n';
                     });
                     corpo += '\n';
                 }
                 
-                const criticoItens = c.itens.filter(i => i.status === 'critico');
+                const criticoItens = (v.itens || []).filter(i => i.status === 'critico');
                 if (criticoItens.length > 0) {
                     corpo += 'Itens URGENTES:\n';
                     criticoItens.forEach(i => {
-                        corpo += '  !! ' + i.nome;
+                        corpo += '  ⚠ ' + i.nome;
                         if (i.obs) corpo += ' - ' + i.obs;
                         corpo += '\n';
                     });
                     corpo += '\n';
                 }
+                    corpo += '\n';
+                }
                 
-                corpo += 'O documento completo com todos os detalhes esta em anexo.\n\n';
-                corpo += 'Para aprovacao ou duvidas, me envie uma mensagem!\n\n';
+                corpo += '\nO documento completo com todos os detalhes está em anexo.\n\n';
+                corpo += 'Para aprovação ou dúvidas, me envie uma mensagem!\n\n';
                 corpo += 'Atenciosamente,\n' + usuarioAtual.nome;
             } else {
                 corpo = saud + '\n\n';
-                corpo += 'Aqui e da ' + usuarioAtual.nome + '.\n\n';
-                corpo += 'CERTIFICADO - SERVICOS REALIZADOS\n';
-                corpo += '================================\n\n';
-                corpo += 'Veiculo: ' + c.veiculo + '\n';
-                corpo += 'Placa: ' + (c.placa || '-') + '\n';
+                corpo += 'Aqui é da ' + usuarioAtual.nome + '.\n\n';
+                corpo += 'CERTIFICADO DE CONCLUSÃO\n';
+                corpo += '=========================\n\n';
+                corpo += 'Veículo: ' + (v.veiculo || '-') + '\n';
+                corpo += 'Placa: ' + (v.placa || '-') + '\n';
                 corpo += 'Data: ' + dataHoje + '\n\n';
                 
-                if (c.servicos.length > 0) {
-                    corpo += 'Servicos Executados:\n';
-                    c.servicos.forEach(s => {
+                if (v.servicos && v.servicos.length > 0) {
+                    corpo += 'Serviços Executados:\n';
+                    v.servicos.forEach(s => {
                         const nomeServico = typeof s === 'string' ? s : s.nome;
                         const urgencia = typeof s === 'object' ? s.urgencia : '';
                         if (urgencia === 'critico') {
-                            corpo += '  !! ' + nomeServico + ' [URGENTE]\n';
+                            corpo += '  ⚠ ' + nomeServico + ' [URGENTE]\n';
                         } else if (urgencia === 'atencao') {
-                            corpo += '  * ' + nomeServico + ' [ATENCAO]\n';
+                            corpo += '  ✋ ' + nomeServico + ' [ATENÇÃO]\n';
                         } else {
-                            corpo += '  OK ' + nomeServico + '\n';
+                            corpo += '  ✓ ' + nomeServico + '\n';
                         }
                     });
                     corpo += '\n';
                 }
                 
-                const ok = c.itens.filter(i => i.status === 'ok');
+                const ok = (v.itens || []).filter(i => i.status === 'ok');
                 if (ok.length > 0) {
-                    corpo += 'Itens Verificados e OK:\n' + ok.map(i => '  OK ' + i.nome).join('\n') + '\n\n';
+                    corpo += 'Itens Verificados e OK:\n' + ok.map(i => '  ✓ ' + i.nome).join('\n') + '\n\n';
                 }
                 
-                const at = c.itens.filter(i => i.status === 'atencao');
+                const at = (v.itens || []).filter(i => i.status === 'atencao');
                 if (at.length > 0) {
-                    corpo += 'Itens para acompanhamento (nao urgentes):\n';
+                    corpo += 'Itens para acompanhamento (não urgentes):\n';
                     at.forEach(i => {
-                        corpo += '  ~ ' + i.nome;
+                        corpo += '  ✋ ' + i.nome;
                         if (i.obs) corpo += ' - ' + i.obs;
                         corpo += '\n';
                     });
                     corpo += '\n';
                 }
                 
-                corpo += '\nO certificado completo esta em anexo.\n\n';
-                corpo += 'Obrigado pela confianca!\nAbracos,\n' + usuarioAtual.nome;
+                corpo += '\nO certificado completo está em anexo.\n\n';
+                corpo += 'Obrigado pela confiança!\nAbraços,\n' + usuarioAtual.nome;
             }
 
-            document.getElementById('waPreview').textContent = corpo;
+            document.getElementById('waPreview').innerText = corpo;
             
             const waNum = c.whatsapp.replace(/\D/g, '');
             whatsappLink = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo);
@@ -1998,49 +2120,47 @@
             const doc = new jsPDF();
             
             const c = clientes[clienteAtual];
+            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [], obs: '' }];
+            const v = veiculos[veiculoAtual] || veiculos[0];
+            
             let y = 25;
             const margemEsq = 15;
             const larguraMax = 180;
             
-            doc.setDrawColor(220, 38, 38);
-            doc.setLineWidth(1.5);
-            doc.line(margemEsq, 12, 195, 12);
-            doc.line(margemEsq, 290, 195, 290);
+            const nomeDoc = tipo === 'orcamento' ? 'ORÇAMENTO / AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO';
             
-            if (usuarioAtual.logo) {
-                try {
-                    doc.addImage(usuarioAtual.logo, 'PNG', margemEsq, 15, 20, 20);
-                } catch(e) {}
-            }
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.line(margemEsq, 15, 195, 15);
             
-            doc.setFontSize(20);
+            doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(220, 38, 38);
-            doc.text(usuarioAtual.nome, 105, 28, { align: 'center' });
-            
-            doc.setFontSize(12);
-            doc.setTextColor(80, 80, 80);
-            doc.text(tipo === 'orcamento' ? 'RELATORIO DE AVALIACAO TECNICA' : 'CERTIFICADO DE CONCLUSAO DE SERVICOS', 105, 36, { align: 'center' });
-            
-            y = 55;
-            
-            doc.setFillColor(245, 245, 245);
-            doc.roundedRect(margemEsq, y, larguraMax, 12, 2, 2, 'F');
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(40, 40, 40);
-            doc.text('DADOS DO VEICULO', margemEsq + 5, y + 8);
-            y += 18;
+            doc.setTextColor(0, 0, 0);
+            doc.text(usuarioAtual.nome, 105, 25, { align: 'center' });
             
             doc.setFontSize(11);
+            doc.setTextColor(100, 100, 100);
+            doc.text(nomeDoc, 105, 32, { align: 'center' });
+            
+            y = 50;
+            
+            doc.setFillColor(240, 240, 240);
+            doc.roundedRect(margemEsq, y, larguraMax, 10, 2, 2, 'F');
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('DADOS DO VEÍCULO', margemEsq + 5, y + 7);
+            y += 16;
+            
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             
             const dados = [
                 ['Cliente: ', c.nome || '-'],
-                ['Veiculo: ', c.veiculo || '-'],
-                ['Placa: ', c.placa || '-'],
-                ['Ano: ', c.ano || '-'],
-                ['Km Atual: ', c.km || '-'],
+                ['Veículo: ', v.veiculo || '-'],
+                ['Placa: ', v.placa || '-'],
+                ['Ano: ', v.ano || '-'],
+                ['Km Atual: ', v.km || '-'],
                 ['Data: ', new Date().toLocaleDateString('pt-BR')]
             ];
             
@@ -2049,123 +2169,111 @@
                 doc.text(linha[0], margemEsq, y);
                 const textoLabel = doc.getTextWidth(linha[0]);
                 doc.setFont('helvetica', 'normal');
-                const nomeLen = linha[1].length > 40 ? linha[1].substring(0, 40) + '...' : linha[1];
+                const nomeLen = linha[1].length > 45 ? linha[1].substring(0, 45) + '...' : linha[1];
                 doc.text(nomeLen, margemEsq + textoLabel + 2, y);
-                y += 8;
+                y += 7;
             });
-            y += 10;
+            y += 8;
             
-            doc.setFillColor(220, 38, 38);
-            doc.roundedRect(margemEsq, y, larguraMax, 12, 2, 2, 'F');
-            doc.setFontSize(12);
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(margemEsq, y, larguraMax, 10, 2, 2, 'F');
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(255, 255, 255);
-            doc.text('ITENS INSPECTADOS', margemEsq + 5, y + 8);
-            y += 18;
+            doc.text('ITENS INSPECIONADOS', margemEsq + 5, y + 7);
+            y += 16;
             
             const headers = ['ITEM', 'STATUS', 'OBSERVAÇÃO'];
             const colWidths = [50, 35, 95];
             
-            doc.setFillColor(40, 40, 40);
-            doc.rect(margemEsq, y, larguraMax, 8, 'F');
+            doc.setFillColor(60, 60, 60);
+            doc.rect(margemEsq, y, larguraMax, 7, 'F');
             doc.setTextColor(255, 255, 255);
             let xPos = margemEsq;
             headers.forEach((h, i) => {
-                doc.text(h, xPos + colWidths[i]/2, y + 5.5, { align: 'center' });
+                doc.text(h, xPos + colWidths[i]/2, y + 5, { align: 'center' });
                 xPos += colWidths[i];
             });
-            y += 12;
+            y += 10;
             
-            c.itens.forEach((item, idx) => {
-                if (y > 270) {
+            const itensDoVeiculo = v.itens || [];
+            itensDoVeiculo.forEach((item, idx) => {
+                if (y > 265) {
                     doc.addPage();
-                    doc.setDrawColor(220, 38, 38);
-                    doc.setLineWidth(1.5);
-                    doc.line(margemEsq, 12, 195, 12);
-                    doc.line(margemEsq, 290, 195, 290);
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.line(margemEsq, 15, 195, 15);
                     y = 25;
                 }
                 
                 let corBorda, corFundo;
                 if (item.status === 'ok') {
                     corBorda = [22, 163, 74];
-                    corFundo = [235, 250, 235];
+                    corFundo = [240, 255, 240];
                 } else if (item.status === 'atencao') {
-                    corBorda = [202, 138, 4];
-                    corFundo = [255, 250, 230];
+                    corBorda = [200, 150, 0];
+                    corFundo = [255, 255, 230];
                 } else {
-                    corBorda = [220, 38, 38];
-                    corFundo = [255, 245, 245];
+                    corBorda = [200, 0, 0];
+                    corFundo = [255, 240, 240];
                 }
                 
                 doc.setFillColor(corFundo[0], corFundo[1], corFundo[2]);
-                doc.roundedRect(margemEsq, y - 4, larguraMax, 9, 1, 1, 'F');
+                doc.roundedRect(margemEsq, y - 4, larguraMax, 8, 1, 1, 'F');
                 doc.setDrawColor(corBorda[0], corBorda[1], corBorda[2]);
-                doc.setLineWidth(0.5);
-                doc.roundedRect(margemEsq, y - 4, larguraMax, 9, 1, 1, 'S');
+                doc.setLineWidth(0.3);
+                doc.roundedRect(margemEsq, y - 4, larguraMax, 8, 1, 1, 'S');
                 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
                 doc.setTextColor(corBorda[0], corBorda[1], corBorda[2]);
                 xPos = margemEsq;
-                const nomeItem = item.nome ? (item.nome.length > 20 ? item.nome.substring(0, 20) + '...' : item.nome) : '-';
+                const nomeItem = item.nome ? (item.nome.length > 18 ? item.nome.substring(0, 18) + '...' : item.nome) : '-';
                 doc.text(nomeItem, xPos + 25, y, { align: 'center' });
                 xPos += colWidths[0];
                 
-                let labelStatus = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENCAO' : 'CRITICO';
+                let labelStatus = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : 'CRÍTICO';
                 doc.text(labelStatus, xPos + 17, y, { align: 'center' });
                 xPos += colWidths[1];
                 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
                 doc.setTextColor(80, 80, 80);
-                const obsItem = item.obs ? (item.obs.length > 30 ? item.obs.substring(0, 30) + '...' : item.obs) : '-';
+                const obsItem = item.obs ? (item.obs.length > 35 ? item.obs.substring(0, 35) + '...' : item.obs) : '-';
                 doc.text(obsItem, xPos + 47, y, { align: 'center' });
-                y += 12;
+                y += 11;
             });
-            y += 8;
+            y += 5;
             
-            const cr = c.itens.filter(i => i.status === 'critico');
+            const cr = (v.itens || []).filter(i => i.status === 'critico');
             if (cr.length > 0) {
-                doc.setFillColor(255, 230, 230);
-                doc.roundedRect(margemEsq, y, larguraMax, 10, 1, 1, 'F');
-                doc.setFontSize(10);
-                doc.setTextColor(220, 38, 38);
+                doc.setFillColor(255, 240, 240);
+                doc.roundedRect(margemEsq, y, larguraMax, 8, 1, 1, 'F');
+                doc.setFontSize(9);
+                doc.setTextColor(200, 0, 0);
                 doc.setFont('helvetica', 'bold');
-                const urgenciaTxt = 'ATENCAO URGENTE: Itens Criticos precisam de reparo!';
-                doc.text(urgenciaTxt, margemEsq + 5, y + 6);
-                y += 15;
+                doc.text('ATENÇÃO URGENTE: Itens críticos precisam de reparo!', margemEsq + 5, y + 5);
+                y += 12;
             }
             
-            doc.setFillColor(220, 38, 38);
-            doc.roundedRect(margemEsq, y, larguraMax, 12, 2, 2, 'F');
-            doc.setFontSize(12);
+            doc.setFillColor(0, 0, 0);
+            doc.roundedRect(margemEsq, y, larguraMax, 10, 2, 2, 'F');
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(255, 255, 255);
-            doc.text('SERVICOS ' + (tipo === 'orcamento' ? 'IDENTIFICADOS' : 'REALIZADOS'), margemEsq + 5, y + 8);
-            y += 18;
+            doc.text('SERVIÇOS ' + (tipo === 'orcamento' ? 'IDENTIFICADOS' : 'REALIZADOS'), margemEsq + 5, y + 7);
+            y += 16;
             
-            const coresServicos = [
-                [220, 38, 38],
-                [37, 99, 235],
-                [34, 197, 94],
-                [168, 85, 247],
-                [234, 179, 8],
-                [20, 184, 166],
-                [249, 115, 22],
-                [236, 72, 153]
-            ];
-            
+            const servicosDoVeiculo = v.servicos || [];
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
-            if (c.servicos.length > 0) {
-                c.servicos.forEach((s, idx) => {
-                    if (y > 270) {
+            if (servicosDoVeiculo.length > 0) {
+                servicosDoVeiculo.forEach((s, idx) => {
+                    if (y > 265) {
                         doc.addPage();
-                        doc.setDrawColor(220, 38, 38);
-                        doc.setLineWidth(1.5);
-                        doc.line(margemEsq, 12, 195, 12);
-                        doc.line(margemEsq, 290, 195, 290);
+                        doc.setDrawColor(0, 0, 0);
+                        doc.setLineWidth(0.5);
+                        doc.line(margemEsq, 15, 195, 15);
                         y = 25;
                     }
                     
@@ -2174,71 +2282,75 @@
                     
                     let cor, textoUrgencia;
                     if (urgencia === 'critico') {
-                        cor = [220, 38, 38];
+                        cor = [200, 0, 0];
                         textoUrgencia = 'URGENTE';
                     } else if (urgencia === 'atencao') {
-                        cor = [234, 179, 8];
-                        textoUrgencia = 'ATENCAO';
+                        cor = [200, 150, 0];
+                        textoUrgencia = 'ATENÇÃO';
                     } else {
-                        cor = coresServicos[idx % coresServicos.length];
-                        textoUrgencia = tipo === 'orcamento' ? 'Executar' : 'Concluido';
+                        cor = [100, 100, 100];
+                        textoUrgencia = tipo === 'orcamento' ? 'A executar' : 'Concluído';
                     }
                     
                     doc.setFillColor(cor[0], cor[1], cor[2]);
-                    doc.roundedRect(margemEsq, y - 3, 130, 7, 1, 1, 'F');
+                    doc.roundedRect(margemEsq, y - 3, 130, 6, 1, 1, 'F');
                     doc.setTextColor(255, 255, 255);
-                    doc.setFontSize(10);
-                    const nomeCurto = nomeServico.length > 22 ? nomeServico.substring(0, 22) + '...' : nomeServico;
-                    doc.text(nomeCurto, margemEsq + 5, y + 1);
+                    doc.setFontSize(9);
+                    const nomeCurto = nomeServico.length > 20 ? nomeServico.substring(0, 20) + '...' : nomeServico;
+                    doc.text(nomeCurto, margemEsq + 5, y);
                     if (textoUrgencia) {
-                        doc.setFontSize(8);
-                        doc.text(textoUrgencia, margemEsq + 130, y + 1);
+                        doc.setFontSize(7);
+                        doc.text(textoUrgencia, margemEsq + 130, y);
                     }
-                    y += 10;
+                    y += 9;
                 });
             } else {
                 doc.setTextColor(150, 150, 150);
-                doc.text('Nenhum servico registrado', margemEsq, y);
-                y += 8;
+                doc.text('Nenhum serviço registrado', margemEsq, y);
+                y += 7;
             }
-            y += 10;
+            y += 8;
             
-            doc.setFillColor(245, 245, 245);
-            doc.roundedRect(margemEsq, y, larguraMax, 12, 2, 2, 'F');
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(40, 40, 40);
-            doc.text('INFORMACOES ADICIONAIS', margemEsq + 5, y + 8);
-            y += 18;
-            
-            if (c.obs) {
+            if (v.obs && v.obs.trim()) {
+                doc.setFillColor(245, 245, 245);
+                doc.roundedRect(margemEsq, y, larguraMax, 10, 2, 2, 'F');
+                doc.setFontSize(10);
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.text('Observacoes:', margemEsq, y);
-                y += 6;
+                doc.setTextColor(0, 0, 0);
+                doc.text('OBSERVAÇÕES', margemEsq + 5, y + 7);
+                y += 14;
+                
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                const obsLines = doc.splitTextToSize(c.obs, larguraMax);
+                doc.setFontSize(9);
+                doc.setTextColor(60, 60, 60);
+                const obsLines = doc.splitTextToSize(v.obs, larguraMax);
                 obsLines.forEach(linha => {
+                    if (y > 280) {
+                        doc.addPage();
+                        doc.setDrawColor(0, 0, 0);
+                        doc.setLineWidth(0.5);
+                        doc.line(margemEsq, 15, 195, 15);
+                        y = 25;
+                    }
                     doc.text(linha, margemEsq, y);
-                    y += 6;
+                    y += 5;
                 });
             }
             
-            y += 15;
-            doc.setFontSize(9);
+            y += 10;
+            doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
             doc.text('Documento gerado em ' + new Date().toLocaleString('pt-BR'), 105, y, { align: 'center' });
             
-            doc.setDrawColor(220, 38, 38);
-            doc.setLineWidth(0.5);
-            doc.line(70, y + 12, 140, y + 12);
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+            doc.line(70, y + 8, 140, y + 8);
             doc.setFontSize(10);
-            doc.setTextColor(40, 40, 40);
-            doc.text(usuarioAtual.nome, 105, y + 20, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            doc.text(usuarioAtual.nome, 105, y + 15, { align: 'center' });
             doc.setFontSize(8);
-            doc.setTextColor(120, 120, 120);
-            doc.text('Responsavel Tecnico', 105, y + 26, { align: 'center' });
+            doc.setTextColor(100, 100, 100);
+            doc.text('Responsável Técnico', 105, y + 20, { align: 'center' });
             
             pdfBlob = doc.output('blob');
         }
@@ -2271,14 +2383,11 @@
         }
 
         function enviarWhatsApp() {
-            if (whatsappLink) {
-                window.open(whatsappLink, '_blank');
-            } else {
-                const c = clientes[clienteAtual];
-                const waNum = c.whatsapp.replace(/\D/g, '');
-                const texto = document.getElementById('waPreview').textContent;
-                window.open('https://wa.me/' + waNum + '?text=' + encodeURIComponent(texto), '_blank');
-            }
+            const corpo = document.getElementById('waPreview').innerText;
+            const c = clientes[clienteAtual];
+            const waNum = c.whatsapp.replace(/\D/g, '');
+            const link = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo);
+            window.open(link, '_blank');
         }
 
         function imprimirDoc() {
