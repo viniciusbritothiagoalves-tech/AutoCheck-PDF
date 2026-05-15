@@ -537,6 +537,11 @@
                 </div>
             </div>
             
+            <div class="form-group" id="containerAvaliador" style="margin-top: 20px;">
+                <label style="color: #ff4757; font-weight: bold;">Nome do Avaliador / Responsável Técnico *</label>
+                <input type="text" id="nomeAvaliador" placeholder="Obrigatório para gerar o documento" oninput="autoSalvar()" style="background: var(--bg-input); border: 1px solid #ff4757; border-radius: 6px; padding: 12px; color: var(--text); width: 100%; margin-top: 5px;">
+            </div>
+            
             <div class="btn-group">
                 <button class="btn btn-success" onclick="gerarLaudo('orcamento')">Relatório de Serviços</button>
                 <button class="btn btn-warning" onclick="gerarLaudo('laudo')">Certificado de Conclusão</button>
@@ -1662,12 +1667,14 @@
 
         function renderizarServicos() {
             const c = (clienteAtual !== null && clientes[clienteAtual]) ? clientes[clienteAtual] : {};
-            const servicosAtuais = c.servicos || [];
+            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ servicos: c.servicos || [] }];
+            const v = veiculos[typeof veiculoAtual !== 'undefined' ? veiculoAtual : 0] || veiculos[0] || {};
+            const servicosAtuais = v.servicos || [];
             
             document.getElementById('servicesGrid').innerHTML = servicosLista.map(s => {
-                const servicoData = servicosAtuais.find(sv => sv.nome === s);
-                const checked = servicosAtuais.some(sv => sv.nome === s);
-                const urgencia = servicoData ? servicoData.urgencia : '';
+                const servicoData = servicosAtuais.find(sv => (typeof sv === 'string' ? sv : sv.nome) === s);
+                const checked = servicosAtuais.some(sv => (typeof sv === 'string' ? sv : sv.nome) === s);
+                const urgencia = servicoData && typeof servicoData === 'object' ? servicoData.urgencia : '';
                 
                 return `<div class="service-item" style="flex-direction: column; align-items: stretch;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -1911,6 +1918,9 @@
                 document.getElementById('outrosServicosUrgencia').value = '';
             }
             
+            document.getElementById('obsGerais').value = v.obs || '';
+            document.getElementById('nomeAvaliador').value = v.avaliador || '';
+            
             document.querySelectorAll('#servicesGrid input').forEach(cb => {
                 const servicoObj = v.servicos ? v.servicos.find(s => (typeof s === 'string' ? s : s.nome) === cb.value) : null;
                 const checked = servicoObj ? true : false;
@@ -1929,8 +1939,10 @@
         function renderizarItens() {
             try {
                 const c = clientes[clienteAtual];
-                const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ itens: c.itens || [] }];
-                const v = veiculos[veiculoAtual] || veiculos[0];
+                if (!c.veiculos || c.veiculos.length === 0) {
+                    c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: c.itens || [], servicos: c.servicos || [] }];
+                }
+                const v = c.veiculos[veiculoAtual] || c.veiculos[0];
                 if (!v.itens || v.itens.length === 0) {
                     v.itens = [{ nome: '', status: 'ok', obs: '' }];
                 }
@@ -1955,8 +1967,12 @@
 
         function adicionarItem() {
             const c = clientes[clienteAtual];
-            if (!c.itens) c.itens = [];
-            c.itens.push({ nome: '', status: 'ok', obs: '' });
+            if (!c.veiculos || c.veiculos.length === 0) {
+                c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: c.itens || [], servicos: c.servicos || [] }];
+            }
+            const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+            if (!v.itens) v.itens = [];
+            v.itens.push({ nome: '', status: 'ok', obs: '' });
             renderizarItens();
             salvarDados();
             mostrarMsgSalvo();
@@ -1964,8 +1980,12 @@
 
         function removerItem(idx) {
             const c = clientes[clienteAtual];
-            if (c.itens && c.itens.length > 1) {
-                c.itens.splice(idx, 1);
+            if (!c.veiculos || c.veiculos.length === 0) {
+                c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: c.itens || [], servicos: c.servicos || [] }];
+            }
+            const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+            if (v.itens && v.itens.length > 1) {
+                v.itens.splice(idx, 1);
                 renderizarItens();
                 salvarDados();
                 mostrarMsgSalvo();
@@ -1974,7 +1994,14 @@
 
         function mudarStatus(select, idx) {
             select.closest('.item-row').className = 'item-row ' + select.value;
-            clientes[clienteAtual].itens[idx].status = select.value;
+            const c = clientes[clienteAtual];
+            if (!c.veiculos || c.veiculos.length === 0) {
+                c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: c.itens || [], servicos: c.servicos || [] }];
+            }
+            const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+            if (v.itens && v.itens[idx]) {
+                v.itens[idx].status = select.value;
+            }
             autoSalvar();
         }
 
@@ -2057,6 +2084,8 @@
                 if (outros) {
                     v.servicos.push({ nome: outros, urgencia: outrosUrgencia });
                 }
+                v.obs = document.getElementById('obsGerais').value;
+                v.avaliador = document.getElementById('nomeAvaliador').value;
                 v.ultimaAtt = new Date().toISOString();
                 c.ultimaAtt = new Date().toISOString();
                 salvarDados();
@@ -2073,7 +2102,14 @@
         }
 
         function mostrarMsgSalvo() {
-            const msg = document.getElementById('autoSaveMsg');
+            let msg = document.getElementById('autoSaveMsg');
+            if (!msg) {
+                msg = document.createElement('div');
+                msg.id = 'autoSaveMsg';
+                msg.className = 'auto-save';
+                msg.textContent = '✓ Salvo';
+                document.body.appendChild(msg);
+            }
             msg.classList.add('show');
             setTimeout(() => msg.classList.remove('show'), 1500);
         }
@@ -2089,6 +2125,12 @@
         }
 
         function gerarLaudo(tipo) {
+            const avaliador = document.getElementById('nomeAvaliador').value.trim();
+            if (!avaliador) {
+                alert('O preenchimento do Nome do Avaliador / Responsável Técnico é obrigatório para gerar o documento.');
+                document.getElementById('nomeAvaliador').focus();
+                return;
+            }
             tipoLaudo = tipo;
             autoSalvar();
             document.getElementById('modalTitulo').textContent = tipo === 'orcamento' ? 'Relatório de Serviços' : 'Certificado de Conclusão';
@@ -2206,7 +2248,7 @@
                 
                 corpo += '\nO documento completo com todos os detalhes está em anexo.\n\n';
                 corpo += 'Para aprovação ou dúvidas, me envie uma mensagem!\n\n';
-                corpo += 'Atenciosamente,\n' + usuarioAtual.nome;
+                corpo += 'Atenciosamente,\n' + (v.avaliador || usuarioAtual.nome);
             } else {
                 corpo = saud + '\n\n';
                 corpo += 'Aqui é da ' + usuarioAtual.nome + '.\n\n';
@@ -2249,13 +2291,13 @@
                 }
                 
                 corpo += '\nO certificado completo está em anexo.\n\n';
-                corpo += 'Obrigado pela confiança!\nAbraços,\n' + usuarioAtual.nome;
+                corpo += 'Obrigado pela confiança!\nAbraços,\n' + (v.avaliador || usuarioAtual.nome);
             }
 
             document.getElementById('waPreview').innerText = corpo;
             
-            const waNum = c.whatsapp.replace(/\D/g, '');
-            whatsappLink = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo);
+            const waNum = c.whatsapp ? c.whatsapp.replace(/\D/g, '') : '';
+            whatsappLink = waNum ? 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo) : '';
         }
 
         function gerarPdfBlob(html, nomeCliente, tipo) {
@@ -2490,10 +2532,10 @@
             doc.line(70, y + 8, 140, y + 8);
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text(usuarioAtual.nome, 105, y + 15, { align: 'center' });
+            doc.text(v.avaliador || usuarioAtual.nome, 105, y + 15, { align: 'center' });
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
-            doc.text('Responsável Técnico', 105, y + 20, { align: 'center' });
+            doc.text('Responsável Técnico / Avaliador', 105, y + 20, { align: 'center' });
             
             pdfBlob = doc.output('blob');
         }
@@ -2509,9 +2551,12 @@
         function downloadPdf() {
             if (pdfBlob) {
                 const c = clientes[clienteAtual];
-                const oficina = usuarioAtual.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-                const cliente = c.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-                const veiculo = c.veiculo.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo || '' }];
+                const v = veiculos[typeof veiculoAtual !== 'undefined' ? veiculoAtual : 0] || veiculos[0] || {};
+                
+                const oficina = (usuarioAtual.nome || 'Oficina').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const cliente = (c.nome || 'Cliente').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const veiculo = (v.veiculo || 'Veiculo').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 const tipoDoc = tipoLaudo === 'orcamento' ? 'Avaliacao' : 'Certificado';
                 const nomeArquivo = oficina + '_' + cliente + '_' + veiculo + '_' + tipoDoc + '.pdf';
                 const url = URL.createObjectURL(pdfBlob);
@@ -2528,7 +2573,11 @@
         function enviarWhatsApp() {
             const corpo = document.getElementById('waPreview').innerText;
             const c = clientes[clienteAtual];
-            const waNum = c.whatsapp.replace(/\D/g, '');
+            const waNum = c.whatsapp ? c.whatsapp.replace(/\D/g, '') : '';
+            if (!waNum) {
+                alert('Cliente não possui WhatsApp cadastrado.');
+                return;
+            }
             const link = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo);
             window.open(link, '_blank');
         }
