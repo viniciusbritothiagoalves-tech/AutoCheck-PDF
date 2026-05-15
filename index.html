@@ -531,6 +531,7 @@
                             <option value="">Sem urgência</option>
                             <option value="atencao">⚠️ Atenção</option>
                             <option value="critico">🔴 Urgente</option>
+                            <option value="recusado">❌ Não Autorizado</option>
                         </select>
                         <input type="text" id="outrosServicos" placeholder="Descreva outros serviços..." oninput="autoSalvar()" style="flex: 1;">
                     </div>
@@ -1666,6 +1667,7 @@
                         <option value="">Sem urgência</option>
                         <option value="atencao" ${urgencia === 'atencao' ? 'selected' : ''}>⚠️ Atenção</option>
                         <option value="critico" ${urgencia === 'critico' ? 'selected' : ''}>🔴 Urgente</option>
+                        <option value="recusado" ${urgencia === 'recusado' ? 'selected' : ''}>❌ Não Autorizado</option>
                     </select>
                 </div>`;
             }).join('');
@@ -2166,8 +2168,18 @@ function gerarDocs() {
             const urgentHtml = cr.length > 0 ? '<p class="urgente">⚠ ATENÇÃO URGENTE - Reparo Necessário</p>' : '';
             const servHtml = (v.servicos || []).length > 0 ? '<ul>' + v.servicos.map(s => {
                 const nome = typeof s === 'string' ? s : s.nome;
-                const urg = typeof s === 'object' && s.urgencia ? (s.urgencia === 'critico' ? ' <strong style="color:red">[URGENTE]</strong>' : (s.urgencia === 'atencao' ? ' <strong style="color:orange">[ATENÇÃO]</strong>' : '')) : '';
-                return `<li>${nome}${urg}</li>`;
+                let urgHtml = '';
+                if (tipoLaudo === 'orcamento') {
+                    const urg = typeof s === 'object' && s.urgencia ? (s.urgencia === 'critico' ? ' <strong style="color:red">[URGENTE]</strong>' : (s.urgencia === 'atencao' ? ' <strong style="color:orange">[ATENÇÃO]</strong>' : (s.urgencia === 'recusado' ? ' <strong style="color:gray">[NÃO AUTORIZADO]</strong>' : ''))) : '';
+                    urgHtml = urg;
+                } else {
+                    if (typeof s === 'object' && s.urgencia === 'recusado') {
+                        urgHtml = ' <strong style="color:#d97706">[NÃO AUTORIZADO]</strong>';
+                    } else {
+                        urgHtml = ' <strong style="color:green">[CONCLUÍDO]</strong>';
+                    }
+                }
+                return `<li>${nome}${urgHtml}</li>`;
             }).join('') + '</ul>' : '<p>-</p>';
 
             const tipoDocumento = tipoLaudo === 'orcamento' ? 'AVALIAÇÃO DO VEÍCULO' : 'CERTIFICADO DE CONCLUSÃO';
@@ -2230,6 +2242,8 @@ function gerarDocs() {
                             corpo += '  ⚠ ' + nomeServico + ' [URGENTE]\n';
                         } else if (urgencia === 'atencao') {
                             corpo += '  ✋ ' + nomeServico + ' [ATENÇÃO]\n';
+                        } else if (urgencia === 'recusado') {
+                            corpo += '  ❌ ' + nomeServico + ' [NÃO AUTORIZADO]\n';
                         } else {
                             corpo += '  ✓ ' + nomeServico + '\n';
                         }
@@ -2262,7 +2276,7 @@ function gerarDocs() {
                 
                 corpo += '\nO documento completo com todos os detalhes está em anexo.\n\n';
                 corpo += 'Para aprovação ou dúvidas, me envie uma mensagem!\n\n';
-                corpo += 'Atenciosamente,\n' + (v.avaliador || usuarioAtual.nome);
+                corpo += 'Atenciosamente,\n' + usuarioAtual.nome;
             } else {
                 corpo = saud + '\n\n';
                 corpo += 'Aqui é da ' + usuarioAtual.nome + '.\n\n';
@@ -2273,16 +2287,14 @@ function gerarDocs() {
                 corpo += 'Data: ' + dataHoje + '\n\n';
                 
                 if (v.servicos && v.servicos.length > 0) {
-                    corpo += 'Serviços Executados:\n';
+                    corpo += 'Status dos Serviços:\n';
                     v.servicos.forEach(s => {
                         const nomeServico = typeof s === 'string' ? s : s.nome;
                         const urgencia = typeof s === 'object' ? s.urgencia : '';
-                        if (urgencia === 'critico') {
-                            corpo += '  ⚠ ' + nomeServico + ' [URGENTE]\n';
-                        } else if (urgencia === 'atencao') {
-                            corpo += '  ✋ ' + nomeServico + ' [ATENÇÃO]\n';
+                        if (urgencia === 'recusado') {
+                            corpo += '  ❌ ' + nomeServico + ' [NÃO AUTORIZADO / PENDENTE]\n';
                         } else {
-                            corpo += '  ✓ ' + nomeServico + '\n';
+                            corpo += '  ✅ ' + nomeServico + ' [CONCLUÍDO]\n';
                         }
                     });
                     corpo += '\n';
@@ -2305,7 +2317,7 @@ function gerarDocs() {
                 }
                 
                 corpo += '\nO certificado completo está em anexo.\n\n';
-                corpo += 'Obrigado pela confiança!\nAbraços,\n' + (v.avaliador || usuarioAtual.nome);
+                corpo += 'Obrigado pela confiança!\nAbraços,\n' + usuarioAtual.nome;
             }
 
             const waPreviewEl = document.getElementById('waPreview');
@@ -2499,15 +2511,28 @@ function gerarPdfBlob(html, nomeCliente, tipo) {
                     const urgencia = typeof s === 'object' ? s.urgencia : '';
                     
                     let cor, textoUrgencia;
-                    if (urgencia === 'critico') {
-                        cor = [200, 0, 0];
-                        textoUrgencia = 'URGENTE';
-                    } else if (urgencia === 'atencao') {
-                        cor = [200, 150, 0];
-                        textoUrgencia = 'ATENÇÃO';
+                    if (tipo === 'orcamento') {
+                        if (urgencia === 'critico') {
+                            cor = [200, 0, 0];
+                            textoUrgencia = 'URGENTE';
+                        } else if (urgencia === 'atencao') {
+                            cor = [200, 150, 0];
+                            textoUrgencia = 'ATENÇÃO';
+                        } else if (urgencia === 'recusado') {
+                            cor = [100, 100, 100];
+                            textoUrgencia = 'NÃO AUTORIZADO';
+                        } else {
+                            cor = [100, 100, 100];
+                            textoUrgencia = 'A executar';
+                        }
                     } else {
-                        cor = [100, 100, 100];
-                        textoUrgencia = tipo === 'orcamento' ? 'A executar' : 'Concluído';
+                        if (urgencia === 'recusado') {
+                            cor = [200, 100, 0];
+                            textoUrgencia = 'NÃO AUTORIZADO';
+                        } else {
+                            cor = [22, 163, 74];
+                            textoUrgencia = 'CONCLUÍDO';
+                        }
                     }
                     
                     doc.setFillColor(cor[0], cor[1], cor[2]);
