@@ -539,7 +539,7 @@
             
             <div class="form-group" id="containerAvaliador" style="margin-top: 20px;">
                 <label style="color: #ff4757; font-weight: bold;">Nome do Avaliador / Responsável Técnico *</label>
-                <input type="text" id="nomeAvaliador" placeholder="Obrigatório para gerar o documento" oninput="autoSalvar()" style="background: var(--bg-input); border: 1px solid #ff4757; border-radius: 6px; padding: 12px; color: var(--text); width: 100%; margin-top: 5px;">
+                <input type="text" id="nomeAvaliador" placeholder="Obrigatório para gerar o documento" oninput="autoSalvar()" autocomplete="off" style="background: var(--bg-input); border: 1px solid #ff4757; border-radius: 6px; padding: 12px; color: var(--text); width: 100%; margin-top: 5px;">
             </div>
             
             <div class="btn-group">
@@ -1662,7 +1662,7 @@
                         <input type="checkbox" value="${s}" ${checked ? 'checked' : ''} onchange="toggleServico(this)">
                         <span>${s}</span>
                     </div>
-                    <select class="servico-urgencia" data-servico="${s}" onchange="autoSalvar()" style="margin-top: 5px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 6px; color: var(--text); font-size: 12px;">
+                    <select id="${'urgencia_' + s.replace(/[^a-zA-Z0-9]/g, '')}" class="servico-urgencia" data-servico="${s}" onchange="autoSalvar()" style="margin-top: 5px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 6px; color: var(--text); font-size: 12px;">
                         <option value="">Sem urgência</option>
                         <option value="atencao" ${urgencia === 'atencao' ? 'selected' : ''}>⚠️ Atenção</option>
                         <option value="critico" ${urgencia === 'critico' ? 'selected' : ''}>🔴 Urgente</option>
@@ -1899,7 +1899,6 @@
                 document.getElementById('outrosServicosUrgencia').value = '';
             }
             
-            document.getElementById('obsGerais').value = v.obs || '';
             document.getElementById('nomeAvaliador').value = v.avaliador || '';
             
             document.querySelectorAll('#servicesGrid input').forEach(cb => {
@@ -2039,13 +2038,18 @@
             }
         }
 
-        function autoSalvar() {
+function autoSalvar() {
             try {
+                if (clienteAtual === null || clienteAtual === undefined || !clientes[clienteAtual]) {
+                    console.error('Cliente atual inválido ao auto salvar');
+                    return;
+                }
                 const c = clientes[clienteAtual];
                 if (!c.veiculos || c.veiculos.length === 0) {
                     c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: [], servicos: [] }];
                 }
-                const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+                const veiculoIdx = veiculoAtual !== undefined && veiculoAtual !== null ? veiculoAtual : 0;
+                const v = c.veiculos[veiculoIdx] || c.veiculos[0];
                 
                 document.querySelectorAll('.item-row').forEach((row, i) => {
                     if (v.itens[i]) {
@@ -2065,7 +2069,6 @@
                 if (outros) {
                     v.servicos.push({ nome: outros, urgencia: outrosUrgencia });
                 }
-                v.obs = document.getElementById('obsGerais').value;
                 v.avaliador = document.getElementById('nomeAvaliador').value;
                 v.ultimaAtt = new Date().toISOString();
                 c.ultimaAtt = new Date().toISOString();
@@ -2105,24 +2108,43 @@
             }
         }
 
-        function gerarLaudo(tipo) {
+function gerarLaudo(tipo) {
             const avaliador = document.getElementById('nomeAvaliador').value.trim();
             if (!avaliador) {
                 alert('O preenchimento do Nome do Avaliador / Responsável Técnico é obrigatório para gerar o documento.');
                 document.getElementById('nomeAvaliador').focus();
                 return;
             }
+            if (clienteAtual === null || clienteAtual === undefined) {
+                alert('Erro: Nenhum cliente selecionado. Volte para a lista de clientes e tente novamente.');
+                mostrarClientes();
+                return;
+            }
+            if (!clientes[clienteAtual]) {
+                alert('Erro: Cliente não encontrado. Volte para a lista de clientes e tente novamente.');
+                mostrarClientes();
+                return;
+            }
             tipoLaudo = tipo;
             autoSalvar();
             document.getElementById('modalTitulo').textContent = tipo === 'orcamento' ? 'Relatório de Serviços' : 'Certificado de Conclusão';
-            gerarDocs();
-            document.getElementById('modalPreview').classList.add('active');
+            try {
+                gerarDocs();
+                document.getElementById('modalPreview').classList.add('active');
+            } catch(e) {
+                console.error('Erro ao gerar documento:', e);
+                alert('Erro ao gerar documento: ' + e.message);
+            }
         }
 
-        function gerarDocs() {
+function gerarDocs() {
+            if (clienteAtual === null || clienteAtual === undefined || !clientes[clienteAtual]) {
+                console.error('Cliente atual inválido:', clienteAtual);
+                return;
+            }
             const c = clientes[clienteAtual];
-            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [] }];
-            const v = veiculos[veiculoAtual] || veiculos[0];
+            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: [], servicos: [] }];
+            const v = veiculos[veiculoAtual !== undefined && veiculoAtual !== null ? veiculoAtual : 0] || veiculos[0];
             const hoje = new Date();
             const dataStr = ("0" + hoje.getDate()).slice(-2) + "/" + ("0" + (hoje.getMonth() + 1)).slice(-2) + "/" + hoje.getFullYear();
             const dataExt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -2138,7 +2160,11 @@
             tabela += '</tbody></table>';
 
             const urgentHtml = cr.length > 0 ? '<p class="urgente">⚠ ATENÇÃO URGENTE - Reparo Necessário</p>' : '';
-            const servHtml = (v.servicos || []).length > 0 ? '<ul>' + v.servicos.map(s => `<li>${typeof s === 'string' ? s : s.nome}</li>`).join('') + '</ul>' : '<p>-</p>';
+            const servHtml = (v.servicos || []).length > 0 ? '<ul>' + v.servicos.map(s => {
+                const nome = typeof s === 'string' ? s : s.nome;
+                const urg = typeof s === 'object' && s.urgencia ? (s.urgencia === 'critico' ? ' <strong style="color:red">[URGENTE]</strong>' : (s.urgencia === 'atencao' ? ' <strong style="color:orange">[ATENÇÃO]</strong>' : '')) : '';
+                return `<li>${nome}${urg}</li>`;
+            }).join('') + '</ul>' : '<p>-</p>';
 
             const tipoDocumento = tipoLaudo === 'orcamento' ? 'AVALIAÇÃO DO VEÍCULO' : 'CERTIFICADO DE CONCLUSÃO';
             const tituloDoc = tipoLaudo === 'orcamento' ? 'Avaliação' : 'Certificado';
@@ -2166,10 +2192,10 @@
                 <h2>Serviços ${tipoLaudo === 'orcamento' ? 'Identificados' : 'Realizados'}</h2>
                 ${servHtml}
                 ${v.obs ? '<h2>Observações</h2><div class="obs-box">' + v.obs.replace(/\n/g, '<br>') + '</div>' : ''}
-                <div class="assinatura">
+<div class="assinatura">
                     <p>${dataExt}</p>
                     <div class="linha"></div>
-                    <p><strong>${usuarioAtual.nome}</strong></p>
+                    <p><strong>${v.avaliador || usuarioAtual.nome}</strong></p>
                     <p>Responsável Técnico</p>
                 </div>
             `;
@@ -2284,13 +2310,23 @@
             whatsappLink = waNum ? 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(corpo) : '';
         }
 
-        function gerarPdfBlob(html, nomeCliente, tipo) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const c = clientes[clienteAtual];
-            const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [], obs: '' }];
-            const v = veiculos[veiculoAtual] || veiculos[0];
+function gerarPdfBlob(html, nomeCliente, tipo) {
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    console.error('jsPDF não carregado');
+                    alert('Erro: Biblioteca PDF não carregou. Recarregue a página.');
+                    return;
+                }
+                const doc = new jsPDF();
+                
+                if (clienteAtual === null || clienteAtual === undefined || !clientes[clienteAtual]) {
+                    console.error('Cliente atual inválido ao gerar PDF');
+                    return;
+                }
+                const c = clientes[clienteAtual];
+                const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: [], servicos: [], obs: '' }];
+                const v = veiculos[veiculoAtual !== undefined && veiculoAtual !== null ? veiculoAtual : 0] || veiculos[0];
             
             let y = 25;
             const margemEsq = 15;
@@ -2529,7 +2565,11 @@
             doc.setTextColor(100, 100, 100);
             doc.text('Responsável Técnico / Avaliador', 105, y + 20, { align: 'center' });
             
-            pdfBlob = doc.output('blob');
+pdfBlob = doc.output('blob');
+            } catch(e) {
+                console.error('Erro ao gerar PDF:', e);
+                alert('Erro ao gerar PDF: ' + e.message);
+            }
         }
 
         function mostrarDocAba(aba) {
