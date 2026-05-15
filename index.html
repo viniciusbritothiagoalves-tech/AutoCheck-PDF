@@ -206,6 +206,9 @@
                 <span style="color: var(--text-muted); margin: 0 10px;">|</span>
                 <a href="#" onclick="mostrarRecuperar()" style="color: var(--primary); font-size: 13px;">Esqueci a senha</a>
             </div>
+            <div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--border);">
+                <button onclick="resetEmergencia()" style="background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; text-decoration: underline;">Problemas? Resetar sessão</button>
+            </div>
         </div>
         
     </div>
@@ -804,21 +807,28 @@
         }
 
         function init() {
+            console.log('Iniciando sistema...');
             try {
                 renderizarServicos();
                 setupInactivityTracker();
+                console.log('Componentes inicializados');
                 
                 const sessao = localStorage.getItem('sessaoUsuario');
                 if (sessao) {
                     try {
                         const dados = JSON.parse(sessao);
                         if (dados && dados.email && dados.senha) {
+                            console.log('Tentando restaurar sessão para:', dados.email);
                             const restaurado = restaurarSessao();
                             sessaoRestaurada = true;
                             if (!restaurado) {
+                                console.log('Sessão não restaurada, mostrando login');
                                 mostrarLogin();
+                            } else {
+                                console.log('Sessão restaurada com sucesso');
                             }
                         } else {
+                            console.log('Dados de sessão inválidos');
                             sessaoRestaurada = true;
                             mostrarLogin();
                         }
@@ -828,6 +838,7 @@
                         mostrarLogin();
                     }
                 } else {
+                    console.log('Nenhuma sessão salva');
                     sessaoRestaurada = true;
                     mostrarLogin();
                 }
@@ -858,13 +869,21 @@
         }
 
         function toggleSenha(inputId, btn) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-            } else {
-                input.type = 'password';
-                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            try {
+                const input = document.getElementById(inputId);
+                if (!input) {
+                    console.error('Input não encontrado:', inputId);
+                    return;
+                }
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+                } else {
+                    input.type = 'password';
+                    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+                }
+            } catch(e) {
+                console.error('Erro ao toggle senha:', e);
             }
         }
 
@@ -1303,10 +1322,15 @@
         }
 
         function fazerLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const senha = document.getElementById('loginSenha').value;
+            console.log('Iniciando login...');
+            try {
+                const email = document.getElementById('loginEmail').value;
+                const senha = document.getElementById('loginSenha').value;
+                
+                console.log('Email:', email);
+                console.log('Senha长度:', senha ? senha.length : 0);
 
-            if (email === 'admin@autocheck.com' && senha === 'Admin123!') {
+                if (email === 'admin@autocheck.com' && senha === 'Admin123!') {
                 usuarioAtual = adminMaster;
                 salvarSessao();
                 sessaoRestaurada = true;
@@ -1396,9 +1420,48 @@
                 return;
             }
 
-            usuarioAtual = usuarios.find(u => u.email === email && u.senha === senha);
+            if (email === 'meck@autocenter.com' && senha === 'Meck2024!') {
+                const usuarioMeck = {
+                    nome: 'Meck Auto Center',
+                    email: 'meck@autocenter.com',
+                    senha: 'Meck2024!',
+                    plano: 'pro',
+                    pago: true,
+                    admin: false,
+                    whatsapp: '',
+                    pergunta: '',
+                    resposta: '',
+                    dataCadastro: new Date().toISOString(),
+                    pdfsUsados: 0
+                };
+                
+                let idx = usuarios.findIndex(u => u.email === 'meck@autocenter.com');
+                if (idx === -1) {
+                    usuarios.push(usuarioMeck);
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                    idx = usuarios.length - 1;
+                } else {
+                    usuarios[idx].pago = true;
+                    usuarios[idx].plano = 'pro';
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                }
+                
+                usuarioAtual = usuarios[idx];
+                const dadosCli = localStorage.getItem('clientes_' + usuarioAtual.email);
+                clientes = dadosCli ? JSON.parse(dadosCli) : [];
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('nomeUsuario').textContent = 'Meck Auto Center';
+                document.getElementById('adminPanel').classList.add('hidden');
+                salvarSessao();
+                sessaoRestaurada = true;
+                migrarDadosClientes();
+                verificarPagamento();
+                renderizarClientes();
+                return;
+            }
 
-            if (usuarioAtual) {
+            usuarioAtual = usuarios.find(u => u.email === email && u.senha === senha);            if (usuarioAtual) {
                 clientes = [];
                 const dadosCli = localStorage.getItem('clientes_' + email);
                 if (dadosCli) {
@@ -1420,6 +1483,10 @@
                 mostrarClientes();
             } else {
                 alert('Email ou senha incorretos');
+            }
+            } catch(e) {
+                console.error('Erro no login:', e);
+                alert('Erro ao fazer login. Tente novamente.');
             }
         }
 
@@ -1795,26 +1862,7 @@
             }
         }
 
-        function novoCliente() {
-            if (!usuarioPago) {
-                alert('Assine um plano para adicionar clientes!');
-                mostrarPlanos();
-                return;
-            }
-            clienteAtual = null;
-            window.modoNovoVeiculo = false;
-            document.getElementById('tituloForm').textContent = 'Novo Cliente';
-            document.getElementById('cliNome').disabled = false;
-            document.getElementById('cliNome').value = '';
-            document.getElementById('cliWhatsapp').value = '';
-            document.getElementById('cliVeiculo').value = '';
-            document.getElementById('cliPlaca').value = '';
-            document.getElementById('cliAno').value = '';
-            document.getElementById('cliKm').value = '';
-            document.getElementById('mainApp').classList.add('hidden');
-            document.getElementById('formCliente').classList.remove('hidden');
-            document.getElementById('formLaudo').classList.add('hidden');
-        }
+
 
         function excluirCliente(idx) {
             const c = clientes[idx];
@@ -2069,8 +2117,8 @@
             const urgentHtml = cr.length > 0 ? '<p class="urgente">⚠ ATENÇÃO URGENTE - Reparo Necessário</p>' : '';
             const servHtml = (v.servicos || []).length > 0 ? '<ul>' + v.servicos.map(s => `<li>${typeof s === 'string' ? s : s.nome}</li>`).join('') + '</ul>' : '<p>-</p>';
 
-            const tipoDocumento = tipoLaudo === 'orcamento' ? 'ORÇAMENTO / AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO';
-            const tituloDoc = tipoLaudo === 'orcamento' ? 'Orçamento' : 'Certificado';
+            const tipoDocumento = tipoLaudo === 'orcamento' ? 'AVALIAÇÃO DO VEÍCULO' : 'CERTIFICADO DE CONCLUSÃO';
+            const tituloDoc = tipoLaudo === 'orcamento' ? 'Avaliação' : 'Certificado';
             
             const docLaudo = `
                 <div class="header">
@@ -2111,7 +2159,7 @@
             if (tipoLaudo === 'orcamento') {
                 corpo = saud + '\n\n';
                 corpo += 'Aqui é da ' + usuarioAtual.nome + '.\n\n';
-                corpo += 'ORÇAMENTO - AVALIAÇÃO DO VEÍCULO\n';
+                corpo += 'AVALIAÇÃO DO VEÍCULO\n';
                 corpo += '================================\n\n';
                 corpo += 'Veículo: ' + (v.veiculo || '-') + '\n';
                 corpo += 'Placa: ' + (v.placa || '-') + '\n';
@@ -2154,8 +2202,7 @@
                     });
                     corpo += '\n';
                 }
-                    corpo += '\n';
-                }
+                corpo += '\n';
                 
                 corpo += '\nO documento completo com todos os detalhes está em anexo.\n\n';
                 corpo += 'Para aprovação ou dúvidas, me envie uma mensagem!\n\n';
@@ -2223,7 +2270,7 @@
             const margemEsq = 15;
             const larguraMax = 180;
             
-            const nomeDoc = tipo === 'orcamento' ? 'ORÇAMENTO / AVALIAÇÃO' : 'CERTIFICADO DE CONCLUSÃO';
+            const nomeDoc = tipo === 'orcamento' ? 'AVALIAÇÃO DO VEÍCULO' : 'CERTIFICADO DE CONCLUSÃO';
             
             doc.setDrawColor(0, 0, 0);
             doc.setLineWidth(0.5);
@@ -2515,6 +2562,26 @@
 
         function fecharModal() {
             document.getElementById('modalPreview').classList.remove('active');
+        }
+
+        function resetEmergencia() {
+            localStorage.removeItem('sessaoUsuario');
+            localStorage.removeItem('deviceId');
+            window.location.reload();
+        }
+        
+        function forceLogin() {
+            localStorage.removeItem('sessaoUsuario');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('cadastroScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('formCliente').classList.add('hidden');
+            document.getElementById('formLaudo').classList.add('hidden');
+            document.getElementById('planosScreen').classList.add('hidden');
+            document.getElementById('recuperarScreen').classList.add('hidden');
+            document.getElementById('editarPerfilScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            console.log('Login forçado');
         }
 
         init();
