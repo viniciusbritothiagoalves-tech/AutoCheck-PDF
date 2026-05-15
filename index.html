@@ -2176,7 +2176,7 @@ function gerarDocs() {
                     if (typeof s === 'object' && s.urgencia === 'recusado') {
                         urgHtml = ' <strong style="color:#d97706">[NÃO AUTORIZADO]</strong>';
                     } else {
-                        urgHtml = ' <strong style="color:green">[CONCLUÍDO]</strong>';
+                        urgHtml = ' <strong style="color:green">[REALIZADO]</strong>';
                     }
                 }
                 return `<li>${nome}${urgHtml}</li>`;
@@ -2294,7 +2294,7 @@ function gerarDocs() {
                         if (urgencia === 'recusado') {
                             corpo += '  ❌ ' + nomeServico + ' [NÃO AUTORIZADO / PENDENTE]\n';
                         } else {
-                            corpo += '  ✅ ' + nomeServico + ' [CONCLUÍDO]\n';
+                            corpo += '  ✅ ' + nomeServico + ' [REALIZADO]\n';
                         }
                     });
                     corpo += '\n';
@@ -2531,7 +2531,7 @@ function gerarPdfBlob(html, nomeCliente, tipo) {
                             textoUrgencia = 'NÃO AUTORIZADO';
                         } else {
                             cor = [22, 163, 74];
-                            textoUrgencia = 'CONCLUÍDO';
+                            textoUrgencia = 'REALIZADO';
                         }
                     }
                     
