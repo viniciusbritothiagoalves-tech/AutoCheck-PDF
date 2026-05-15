@@ -608,6 +608,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
         let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+
+        function migrarDadosClientes() {
+            try {
+                const email = usuarioAtual && usuarioAtual.email;
+                if (!email) return;
+                
+                const dadosCli = localStorage.getItem('clientes_' + email);
+                if (!dadosCli) return;
+                
+                let clientesData = JSON.parse(dadosCli);
+                if (!Array.isArray(clientesData)) return;
+                
+                let modificado = false;
+                clientesData = clientesData.map(c => {
+                    if (!c.veiculos || !Array.isArray(c.veiculos)) {
+                        modificado = true;
+                        c.veiculos = [{
+                            veiculo: c.veiculo || '',
+                            placa: c.placa || '',
+                            ano: c.ano || '',
+                            km: c.km || '',
+                            itens: c.itens || [],
+                            servicos: c.servicos || [],
+                            obs: c.obs || '',
+                            ultimaAtt: c.ultimaAtt || new Date().toISOString()
+                        }];
+                    }
+                    return c;
+                });
+                
+                if (modificado) {
+                    localStorage.setItem('clientes_' + email, JSON.stringify(clientesData));
+                    clientes = clientesData;
+                }
+            } catch(e) {
+                console.error('Erro ao migrar dados:', e);
+            }
+        }
         let usuarioAtual = null;
         let clientes = [];
         let clienteAtual = null;
@@ -683,7 +721,10 @@
 
         function verificarLimiteDispositivos() {
             try {
-                if (!usuarioAtual || !usuarioAtual.email || !usuarioAtual.pago) return { allowed: true };
+                if (!usuarioAtual || !usuarioAtual.email) return { allowed: true };
+                if (!usuarioAtual.pago) return { allowed: true };
+                if (!usuarioAtual.plano || usuarioAtual.plano === 'master') return { allowed: true };
+                
                 const deviceId = getDeviceId();
                 const key = 'dispositivos_' + usuarioAtual.email;
                 let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
@@ -792,6 +833,10 @@
                 }
                 
                 verificarMostrarAjuda();
+                
+                if (usuarioAtual && usuarioAtual.email) {
+                    migrarDadosClientes();
+                }
             } catch(e) {
                 console.error('Erro ao inicializar:', e);
                 mostrarLogin();
@@ -879,6 +924,7 @@
                     document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
                     document.getElementById('adminPanel').classList.add('hidden');
                     
+                    migrarDadosClientes();
                     verificarPagamento();
                     renderizarClientes();
                     return true;
@@ -1299,11 +1345,13 @@
                 clientes = dadosCli ? JSON.parse(dadosCli) : [];
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('nomeUsuario').textContent = '🔧 Usuário Teste';
+                document.getElementById('nomeUsuario').textContent = 'Usuário Teste';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
                 sessaoRestaurada = true;
+                migrarDadosClientes();
                 verificarPagamento();
+                renderizarClientes();
                 return;
             }
 
@@ -1338,11 +1386,13 @@
                 clientes = dadosCli ? JSON.parse(dadosCli) : [];
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('nomeUsuario').textContent = '🔧 Usuário Profissional';
+                document.getElementById('nomeUsuario').textContent = 'Usuário Profissional';
                 document.getElementById('adminPanel').classList.add('hidden');
                 salvarSessao();
                 sessaoRestaurada = true;
+                migrarDadosClientes();
                 verificarPagamento();
+                renderizarClientes();
                 return;
             }
 
@@ -1365,6 +1415,7 @@
                 
                 salvarSessao();
                 sessaoRestaurada = true;
+                migrarDadosClientes();
                 verificarPagamento();
                 mostrarClientes();
             } else {
