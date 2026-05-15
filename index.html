@@ -373,12 +373,13 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
             <div class="plan-card" id="plan-basico" style="border: 2px solid var(--border);">
                 <h3 style="font-size: 22px; color: var(--branco);">Básico</h3>
-                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 97<span style="font-size: 16px;">/mês</span></div>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 57<span style="font-size: 16px;">/mês</span></div>
                 <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
-                    <li>🔧 1 dispositivo</li>
+                    <li>📱 <strong>1 dispositivo</strong></li>
                     <li>📄 PDFs ilimitados</li>
                     <li>📑 Geração de PDF</li>
                     <li>📱 WhatsApp automático</li>
+                    <li>🖼️ Logo da oficina nos PDFs</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('basico')">Assinar Agora</button>
             </div>
@@ -386,24 +387,28 @@
             <div class="plan-card" id="plan-pro" style="border: 2px solid var(--primary); background: rgba(220, 38, 38, 0.1);">
                 <div style="text-align: center; background: var(--primary); color: #fff; padding: 6px; border-radius: 8px 8px 0 0; margin: -25px -25px 15px -25px; font-size: 12px; font-weight: 600;">MAIS POPULAR</div>
                 <h3 style="font-size: 22px; color: var(--branco);">Profissional</h3>
-                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 147<span style="font-size: 16px;">/mês</span></div>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 77<span style="font-size: 16px;">/mês</span></div>
                 <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
-                    <li>🔧 3 dispositivos</li>
+                    <li>📱 <strong>3 dispositivos</strong></li>
                     <li>📄 PDFs ilimitados</li>
                     <li>📑 Geração de PDF</li>
                     <li>📱 WhatsApp automático</li>
                     <li>📊 Histórico completo</li>
+                    <li>🖼️ Logo da oficina nos PDFs</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('pro')">Assinar Agora</button>
             </div>
             
             <div class="plan-card" id="plan-master" style="border: 2px solid var(--border);">
                 <h3 style="font-size: 22px; color: var(--branco);">Gold</h3>
-                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 197<span style="font-size: 16px;">/mês</span></div>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 97<span style="font-size: 16px;">/mês</span></div>
                 <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
-                    <li>🔧 5+ dispositivos</li>
-                    <li>✅ Tudo do Profissional</li>
-                    <li>🎨 Logo personalizado</li>
+                    <li>📱 <strong>5+ dispositivos</strong></li>
+                    <li>📄 PDFs ilimitados</li>
+                    <li>📑 Geração de PDF</li>
+                    <li>📱 WhatsApp automático</li>
+                    <li>📊 Histórico completo</li>
+                    <li>🖼️ Logo da oficina nos PDFs</li>
                     <li>⭐ Prioridade suporte</li>
                 </ul>
                 <button class="btn btn-success btn-block" onclick="irParaPagamento('master')">Assinar Agora</button>
@@ -447,9 +452,9 @@
             <div class="form-group" id="testePlanoGroup" style="margin-bottom: 20px; display: none;">
                 <label>Testar Plano (usuários teste)</label>
                 <select id="testePlanoSelect" onchange="trocarPlanoTeste(this.value)" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); width: 100%;">
-                    <option value="basico">Básico - 1 dispositivo</option>
-                    <option value="pro">Profissional - 3 dispositivos</option>
-                    <option value="master">Gold - 5+ dispositivos</option>
+                    <option value="basico">Básico - 1 dispositivo (R$ 57)</option>
+                    <option value="pro">Profissional - 3 dispositivos (R$ 77)</option>
+                    <option value="master">Gold - 5+ dispositivos (R$ 97)</option>
                 </select>
             </div>
             <button class="btn btn-success btn-block" onclick="salvarEdicaoPerfil()">Salvar Alterações</button>
@@ -619,7 +624,7 @@
                 gerarPdf: true,
                 whatsapp: true,
                 historicoCompleto: false,
-                logoPersonalizado: false,
+                logoPersonalizado: true,
                 prioridadeSuporte: false
             },
             pro: {
@@ -628,7 +633,7 @@
                 gerarPdf: true,
                 whatsapp: true,
                 historicoCompleto: true,
-                logoPersonalizado: false,
+                logoPersonalizado: true,
                 prioridadeSuporte: false
             },
             master: {
@@ -641,6 +646,53 @@
                 prioridadeSuporte: true
             }
         };
+
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        function registrarDispositivo() {
+            if (!usuarioAtual || !usuarioAtual.email) return;
+            const deviceId = getDeviceId();
+            const key = 'dispositivos_' + usuarioAtual.email;
+            let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!dispositivos.includes(deviceId)) {
+                dispositivos.push({ id: deviceId, data: new Date().toISOString() });
+                localStorage.setItem(key, JSON.stringify(dispositivos));
+            }
+        }
+
+        function verificarLimiteDispositivos() {
+            if (!usuarioAtual || !usuarioAtual.email || !usuarioAtual.pago) return { allowed: true };
+            const deviceId = getDeviceId();
+            const key = 'dispositivos_' + usuarioAtual.email;
+            let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
+            const max = funcionalidades[usuarioAtual.plano]?.maxDispositivos || 1;
+            const dispositivoExistente = dispositivos.find(d => d.id === deviceId);
+            if (dispositivoExistente) {
+                return { allowed: true, dispositivos: dispositivos.length, max: max };
+            }
+            if (dispositivos.length >= max) {
+                return { 
+                    allowed: false, 
+                    dispositivos: dispositivos.length, 
+                    max: max,
+                    message: `Limite de dispositivos atingido!\n\nSeu plano permite até ${max} dispositivo(s), mas você já tem ${dispositivos.length} dispositivo(s) conectado(s).\n\nPara conectar neste dispositivo, você precisa fazer upgrade para um plano com mais dispositivos.`
+                };
+            }
+            return { allowed: true, dispositivos: dispositivos.length, max: max };
+        }
+
+        function limparDispositivos() {
+            if (!usuarioAtual || !usuarioAtual.email) return;
+            localStorage.removeItem('dispositivos_' + usuarioAtual.email);
+            registrarDispositivo();
+        }
         
         const adminMaster = { email: 'admin@autocheck.com', senha: 'Admin123!', nome: 'Admin Master', plano: 'master', admin: true };
         
@@ -838,6 +890,8 @@
         }
 
         function verificarPagamento() {
+            if (!usuarioAtual) return;
+            
             usuarioPago = usuarioAtual.pago === true;
             
             const banner = document.getElementById('paymentBanner');
@@ -850,6 +904,13 @@
                 if (planoInfo) planoInfo.textContent = 'Plano: Não ativo';
                 verificarMostrarAjuda();
             } else {
+                const check = verificarLimiteDispositivos();
+                if (!check.allowed) {
+                    alert(check.message);
+                    logout();
+                    return;
+                }
+                registrarDispositivo();
                 banner.classList.add('hidden');
                 if (btnNovo) btnNovo.onclick = novoCliente;
                 
@@ -900,9 +961,9 @@
 
         function getPlanoInfo(plano) {
             const planos = {
-                basico: { nome: 'Básico', dispositivos: 1, features: ['✅ 1 dispositivo', '✅ PDFs ilimitados', '✅ Geração de PDF', '✅ WhatsApp automático'] },
-                pro: { nome: 'Profissional', dispositivos: 3, features: ['✅ 3 dispositivos', '✅ PDFs ilimitados', '✅ Geração de PDF', '✅ WhatsApp automático', '✅ Histórico completo'] },
-                master: { nome: 'Gold', dispositivos: 999, features: ['✅ 5+ dispositivos', '✅ Tudo do Profissional', '✅ Logo personalizado', '✅ Prioridade suporte'] }
+                basico: { nome: 'Básico', dispositivos: 1, preco: 57, features: ['✅ 1 dispositivo', '✅ PDFs ilimitados', '✅ Geração de PDF', '✅ WhatsApp automático', '✅ Logo da oficina nos PDFs'] },
+                pro: { nome: 'Profissional', dispositivos: 3, preco: 77, features: ['✅ 3 dispositivos', '✅ PDFs ilimitados', '✅ Geração de PDF', '✅ WhatsApp automático', '✅ Histórico completo', '✅ Logo da oficina nos PDFs'] },
+                master: { nome: 'Gold', dispositivos: '5+', preco: 97, features: ['✅ 5+ dispositivos', '✅ PDFs ilimitados', '✅ Geração de PDF', '✅ WhatsApp automático', '✅ Histórico completo', '✅ Logo da oficina nos PDFs', '✅ Prioridade suporte'] }
             };
             return planos[plano] || planos.basico;
         }
@@ -953,6 +1014,7 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
                 
                 if (success === 'true' && planoPendente && usuarioAtual) {
+                    const planoAnterior = usuarioAtual.plano;
                     usuarioAtual.pago = true;
                     usuarioAtual.plano = planoPendente;
                     
@@ -963,9 +1025,21 @@
                         localStorage.setItem('usuarios', JSON.stringify(usuarios));
                     }
                     
+                    const planoOrder = { 'basico': 1, 'pro': 2, 'master': 3 };
+                    const upgraded = planoAnterior && planoOrder[planoPendente] > planoOrder[planoAnterior];
+                    
+                    if (upgraded) {
+                        limparDispositivos();
+                    }
+                    
                     usuarioPago = true;
                     verificarPagamento();
-                    alert('Pagamento confirmado! Plano ativado com sucesso.');
+                    
+                    if (upgraded) {
+                        alert('Pagamento confirmado! Seu plano foi atualizado com sucesso. O plano anterior foi cancelado e seus dispositivos foram resetados para o novo plano.');
+                    } else {
+                        alert('Pagamento confirmado! Plano ativado com sucesso.');
+                    }
                 } else if (canceled === 'true') {
                     alert('Pagamento cancelado. Escolha um plano quando quiser.');
                 }
@@ -1337,9 +1411,9 @@
                 document.getElementById('logoPreview').innerHTML = '';
             }
             
-            const planoTxt = usuarioAtual.plano === 'basico' ? 'Básico - 1 dispositivo (R$ 97,00)' : 
-                            usuarioAtual.plano === 'pro' ? 'Profissional - 3 dispositivos (R$ 147,00)' : 
-                            usuarioAtual.plano === 'master' ? 'Gold - 5+ dispositivos (R$ 197,00)' : 'Não contratado';
+            const planoTxt = usuarioAtual.plano === 'basico' ? 'Básico - 1 dispositivo (R$ 57,00)' : 
+                            usuarioAtual.plano === 'pro' ? 'Profissional - 3 dispositivos (R$ 77,00)' : 
+                            usuarioAtual.plano === 'master' ? 'Gold - 5+ dispositivos (R$ 97,00)' : 'Não contratado';
             document.getElementById('planoAtualDisplay').textContent = planoTxt;
             
             const isTeste = usuarioAtual.email === 'teste@autochecksistema.com' || 
