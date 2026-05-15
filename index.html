@@ -652,44 +652,59 @@
         };
 
         function getDeviceId() {
-            let deviceId = localStorage.getItem('deviceId');
-            if (!deviceId) {
-                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('deviceId', deviceId);
+            try {
+                let deviceId = localStorage.getItem('deviceId');
+                if (!deviceId) {
+                    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('deviceId', deviceId);
+                }
+                return deviceId;
+            } catch(e) {
+                console.error('Erro ao obter deviceId:', e);
+                return 'device_default';
             }
-            return deviceId;
         }
 
         function registrarDispositivo() {
-            if (!usuarioAtual || !usuarioAtual.email) return;
-            const deviceId = getDeviceId();
-            const key = 'dispositivos_' + usuarioAtual.email;
-            let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
-            if (!dispositivos.includes(deviceId)) {
-                dispositivos.push({ id: deviceId, data: new Date().toISOString() });
-                localStorage.setItem(key, JSON.stringify(dispositivos));
+            try {
+                if (!usuarioAtual || !usuarioAtual.email) return;
+                const deviceId = getDeviceId();
+                const key = 'dispositivos_' + usuarioAtual.email;
+                let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
+                const exists = dispositivos.some(d => d.id === deviceId);
+                if (!exists) {
+                    dispositivos.push({ id: deviceId, data: new Date().toISOString() });
+                    localStorage.setItem(key, JSON.stringify(dispositivos));
+                }
+            } catch(e) {
+                console.error('Erro ao registrar dispositivo:', e);
             }
         }
 
         function verificarLimiteDispositivos() {
-            if (!usuarioAtual || !usuarioAtual.email || !usuarioAtual.pago) return { allowed: true };
-            const deviceId = getDeviceId();
-            const key = 'dispositivos_' + usuarioAtual.email;
-            let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
-            const max = funcionalidades[usuarioAtual.plano]?.maxDispositivos || 1;
-            const dispositivoExistente = dispositivos.find(d => d.id === deviceId);
-            if (dispositivoExistente) {
+            try {
+                if (!usuarioAtual || !usuarioAtual.email || !usuarioAtual.pago) return { allowed: true };
+                const deviceId = getDeviceId();
+                const key = 'dispositivos_' + usuarioAtual.email;
+                let dispositivos = JSON.parse(localStorage.getItem(key) || '[]');
+                const max = funcionalidades[usuarioAtual.plano]?.maxDispositivos || 1;
+                const dispositivoExistente = dispositivos.find(d => d.id === deviceId);
+                if (dispositivoExistente) {
+                    return { allowed: true, dispositivos: dispositivos.length, max: max };
+                }
+                if (dispositivos.length >= max) {
+                    return { 
+                        allowed: false, 
+                        dispositivos: dispositivos.length, 
+                        max: max,
+                        message: `Limite de dispositivos atingido!\n\nSeu plano permite até ${max} dispositivo(s), mas você já tem ${dispositivos.length} dispositivo(s) conectado(s).\n\nPara conectar neste dispositivo, você precisa fazer upgrade para um plano com mais dispositivos.`
+                    };
+                }
                 return { allowed: true, dispositivos: dispositivos.length, max: max };
+            } catch(e) {
+                console.error('Erro ao verificar dispositivos:', e);
+                return { allowed: true };
             }
-            if (dispositivos.length >= max) {
-                return { 
-                    allowed: false, 
-                    dispositivos: dispositivos.length, 
-                    max: max,
-                    message: `Limite de dispositivos atingido!\n\nSeu plano permite até ${max} dispositivo(s), mas você já tem ${dispositivos.length} dispositivo(s) conectado(s).\n\nPara conectar neste dispositivo, você precisa fazer upgrade para um plano com mais dispositivos.`
-                };
-            }
-            return { allowed: true, dispositivos: dispositivos.length, max: max };
         }
 
         function limparDispositivos() {
@@ -748,34 +763,39 @@
         }
 
         function init() {
-            renderizarServicos();
-            setupInactivityTracker();
-            
-            const sessao = localStorage.getItem('sessaoUsuario');
-            if (sessao) {
-                try {
-                    const dados = JSON.parse(sessao);
-                    if (dados && dados.email && dados.senha) {
-                        const restaurado = restaurarSessao();
-                        sessaoRestaurada = true;
-                        if (!restaurado) {
+            try {
+                renderizarServicos();
+                setupInactivityTracker();
+                
+                const sessao = localStorage.getItem('sessaoUsuario');
+                if (sessao) {
+                    try {
+                        const dados = JSON.parse(sessao);
+                        if (dados && dados.email && dados.senha) {
+                            const restaurado = restaurarSessao();
+                            sessaoRestaurada = true;
+                            if (!restaurado) {
+                                mostrarLogin();
+                            }
+                        } else {
+                            sessaoRestaurada = true;
                             mostrarLogin();
                         }
-                    } else {
+                    } catch(e) {
+                        console.error('Erro ao restaurar sessão:', e);
                         sessaoRestaurada = true;
                         mostrarLogin();
                     }
-                } catch(e) {
-                    console.error('Erro ao restaurar sessão:', e);
+                } else {
                     sessaoRestaurada = true;
                     mostrarLogin();
                 }
-            } else {
-                sessaoRestaurada = true;
+                
+                verificarMostrarAjuda();
+            } catch(e) {
+                console.error('Erro ao inicializar:', e);
                 mostrarLogin();
             }
-            
-            verificarMostrarAjuda();
         }
 
         function verificarMostrarAjuda() {
@@ -820,49 +840,54 @@
         }
 
         function restaurarSessao() {
-            const sessao = localStorage.getItem('sessaoUsuario');
-            if (!sessao) return false;
-            
-            const dados = JSON.parse(sessao);
-            if (!dados || !dados.email || !dados.senha) return false;
-            
-            if (dados.email === 'admin@autocheck.com') {
-                usuarioAtual = adminMaster;
-                usuarioPago = true;
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('nomeUsuario').textContent = 'Admin Master';
-                document.getElementById('planBadge').style.display = 'inline-block';
-                document.getElementById('planBadge').textContent = 'MASTER';
-                document.getElementById('adminPanel').classList.remove('hidden');
-                mostrarDashboardAdmin();
-                return true;
-            }
-            
-            usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-            const user = usuarios.find(u => u.email === dados.email);
-            
-            if (user && user.senha === dados.senha) {
-                usuarioAtual = user;
-                usuarioPago = user.pago === true;
+            try {
+                const sessao = localStorage.getItem('sessaoUsuario');
+                if (!sessao) return false;
                 
-                const dadosCli = localStorage.getItem('clientes_' + user.email);
-                if (dadosCli) {
-                    try { clientes = JSON.parse(dadosCli) || []; } catch(e) { clientes = []; }
-                } else {
-                    clientes = [];
+                const dados = JSON.parse(sessao);
+                if (!dados || !dados.email || !dados.senha) return false;
+                
+                if (dados.email === 'admin@autocheck.com') {
+                    usuarioAtual = adminMaster;
+                    usuarioPago = true;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('nomeUsuario').textContent = 'Admin Master';
+                    document.getElementById('planBadge').style.display = 'inline-block';
+                    document.getElementById('planBadge').textContent = 'MASTER';
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    mostrarDashboardAdmin();
+                    return true;
                 }
                 
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
-                document.getElementById('adminPanel').classList.add('hidden');
+                usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                const user = usuarios.find(u => u.email === dados.email);
                 
-                verificarPagamento();
-                renderizarClientes();
-                return true;
+                if (user && user.senha === dados.senha) {
+                    usuarioAtual = user;
+                    usuarioPago = user.pago === true;
+                    
+                    const dadosCli = localStorage.getItem('clientes_' + user.email);
+                    if (dadosCli) {
+                        try { clientes = JSON.parse(dadosCli) || []; } catch(e) { clientes = []; }
+                    } else {
+                        clientes = [];
+                    }
+                    
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
+                    document.getElementById('adminPanel').classList.add('hidden');
+                    
+                    verificarPagamento();
+                    renderizarClientes();
+                    return true;
+                }
+                return false;
+            } catch(e) {
+                console.error('Erro ao restaurar sessão:', e);
+                return false;
             }
-            return false;
         }
 
 
@@ -894,34 +919,38 @@
         }
 
         function verificarPagamento() {
-            if (!usuarioAtual) return;
-            
-            usuarioPago = usuarioAtual.pago === true;
-            
-            const banner = document.getElementById('paymentBanner');
-            const btnNovo = document.getElementById('btnNovoCliente');
-            const planoInfo = document.getElementById('planoInfo');
-            
-            if (!usuarioPago) {
-                banner.classList.remove('hidden');
-                if (btnNovo) btnNovo.onclick = function() { alert('Assine um plano para adicionar clientes!'); };
-                if (planoInfo) planoInfo.textContent = 'Plano: Não ativo';
-                verificarMostrarAjuda();
-            } else {
-                const check = verificarLimiteDispositivos();
-                if (!check.allowed) {
-                    alert(check.message);
-                    logout();
-                    return;
-                }
-                registrarDispositivo();
-                banner.classList.add('hidden');
-                if (btnNovo) btnNovo.onclick = novoCliente;
+            try {
+                if (!usuarioAtual) return;
                 
-                const nomePlano = usuarioAtual.plano === 'basico' ? 'Básico' : 
-                                  usuarioAtual.plano === 'pro' ? 'Profissional' : 
-                                  usuarioAtual.plano === 'master' ? 'Gold' : '';
-                if (planoInfo) planoInfo.textContent = nomePlano ? 'Plano: ' + nomePlano + ' (Ativo)' : 'Plano: Ativo';
+                usuarioPago = usuarioAtual.pago === true;
+                
+                const banner = document.getElementById('paymentBanner');
+                const btnNovo = document.getElementById('btnNovoCliente');
+                const planoInfo = document.getElementById('planoInfo');
+                
+                if (!usuarioPago) {
+                    banner.classList.remove('hidden');
+                    if (btnNovo) btnNovo.onclick = function() { alert('Assine um plano para adicionar clientes!'); };
+                    if (planoInfo) planoInfo.textContent = 'Plano: Não ativo';
+                    verificarMostrarAjuda();
+                } else {
+                    const check = verificarLimiteDispositivos();
+                    if (!check.allowed) {
+                        alert(check.message);
+                        logout();
+                        return;
+                    }
+                    registrarDispositivo();
+                    banner.classList.add('hidden');
+                    if (btnNovo) btnNovo.onclick = novoCliente;
+                    
+                    const nomePlano = usuarioAtual.plano === 'basico' ? 'Básico' : 
+                                      usuarioAtual.plano === 'pro' ? 'Profissional' : 
+                                      usuarioAtual.plano === 'master' ? 'Gold' : '';
+                    if (planoInfo) planoInfo.textContent = nomePlano ? 'Plano: ' + nomePlano + ' (Ativo)' : 'Plano: Ativo';
+                }
+            } catch(e) {
+                console.error('Erro ao verificar pagamento:', e);
             }
         }
 
@@ -1561,37 +1590,41 @@
         }
 
         function renderizarClientes() {
-            const lista = document.getElementById('clientesLista');
-            const sem = document.getElementById('semClientes');
-            if (clientes.length === 0) {
-                lista.innerHTML = '';
-                sem.classList.remove('hidden');
-            } else {
-                sem.classList.add('hidden');
-                lista.innerHTML = clientes.map((c, i) => {
-                    const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km }];
-                    const totalDocs = c.historicoPdfs ? c.historicoPdfs.length : 0;
-                    
-                    return `
-                    <div class="client-item" onclick="abrirLaudo(${i}, 0)">
-                        <div class="client-info">
-                            <h3>${c.nome}</h3>
-                            ${veiculos.map((v, vi) => `
-                                <p style="margin: 5px 0; font-size: 14px;">
-                                    🚗 ${v.veiculo || 'Sem veículo'} ${v.placa ? '- ' + v.placa : ''}
-                                    ${v.ano ? '(' + v.ano + ')' : ''}
-                                </p>
-                            `).join('')}
-                            ${totalDocs > 0 ? '<p style="font-size:11px;color:var(--success)">📄 ' + totalDocs + ' documento(s)</p>' : ''}
+            try {
+                const lista = document.getElementById('clientesLista');
+                const sem = document.getElementById('semClientes');
+                if (!clientes || clientes.length === 0) {
+                    lista.innerHTML = '';
+                    sem.classList.remove('hidden');
+                } else {
+                    sem.classList.add('hidden');
+                    lista.innerHTML = clientes.map((c, i) => {
+                        const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '' }];
+                        const totalDocs = c.historicoPdfs ? c.historicoPdfs.length : 0;
+                        
+                        return `
+                        <div class="client-item" onclick="abrirLaudo(${i}, 0)">
+                            <div class="client-info">
+                                <h3>${c.nome || 'Cliente'}</h3>
+                                ${veiculos.map((v, vi) => `
+                                    <p style="margin: 5px 0; font-size: 14px;">
+                                        ${v.veiculo || 'Sem veículo'} ${v.placa ? '- ' + v.placa : ''}
+                                        ${v.ano ? '(' + v.ano + ')' : ''}
+                                    </p>
+                                `).join('')}
+                                ${totalDocs > 0 ? '<p style="font-size:11px;color:var(--success)">' + totalDocs + ' documento(s)</p>' : ''}
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                ${veiculos.length > 0 ? `<button class="btn btn-sm" onclick="event.stopPropagation(); abrirLaudo(${i}, 0)">Atender ${veiculos[0].placa || ''}</button>` : ''}
+                                <button class="btn btn-sm" style="background:var(--primary)" onclick="event.stopPropagation(); adicionarVeiculoExistente(${i})">+ Novo Veículo</button>
+                                ${totalDocs > 0 ? '<button class="btn btn-sm" style="background:var(--success)" onclick="event.stopPropagation(); verHistorico(' + i + ')">Docs</button>' : ''}
+                                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); excluirCliente(${i})">×</button>
+                            </div>
                         </div>
-                        <div style="display:flex;flex-direction:column;gap:5px;">
-                            ${veiculos.length > 0 ? `<button class="btn btn-sm" onclick="event.stopPropagation(); abrirLaudo(${i}, 0)">Atender ${veiculos[0].placa || ''}</button>` : ''}
-                            <button class="btn btn-sm" style="background:var(--primary)" onclick="event.stopPropagation(); adicionarVeiculoExistente(${i})">+ Novo Veículo</button>
-                            ${totalDocs > 0 ? '<button class="btn btn-sm" style="background:var(--success)" onclick="event.stopPropagation(); verHistorico(' + i + ')">📄</button>' : ''}
-                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); excluirCliente(${i})">×</button>
-                        </div>
-                    </div>
-                `}).join('');
+                    `}).join('');
+                }
+            } catch(e) {
+                console.error('Erro ao renderizar clientes:', e);
             }
         }
 
@@ -1795,24 +1828,30 @@
         }
 
         function renderizarItens() {
-            const c = clientes[clienteAtual];
-            if (!c.itens || c.itens.length === 0) {
-                c.itens = [{ nome: '', status: 'ok', obs: '' }];
-            }
-            document.getElementById('itensLista').innerHTML = c.itens.map((item, i) => `
-                <div class="item-row ${item.status}">
-                    <div class="item-header">
-                        <input type="text" placeholder="Item" value="${item.nome}" oninput="autoSalvar()">
-                        <select onchange="mudarStatus(this, ${i})">
-                            <option value="ok" ${item.status==='ok'?'selected':''}>OK</option>
-                            <option value="atencao" ${item.status==='atencao'?'selected':''}>Atenção</option>
-                            <option value="critico" ${item.status==='critico'?'selected':''}>Crítico</option>
-                        </select>
-                        <button class="btn-remover" onclick="removerItem(${i})" title="Remover">×</button>
+            try {
+                const c = clientes[clienteAtual];
+                const veiculos = c.veiculos && c.veiculos.length > 0 ? c.veiculos : [{ itens: c.itens || [] }];
+                const v = veiculos[veiculoAtual] || veiculos[0];
+                if (!v.itens || v.itens.length === 0) {
+                    v.itens = [{ nome: '', status: 'ok', obs: '' }];
+                }
+                document.getElementById('itensLista').innerHTML = v.itens.map((item, i) => `
+                    <div class="item-row ${item.status}">
+                        <div class="item-header">
+                            <input type="text" placeholder="Item" value="${item.nome || ''}" oninput="autoSalvar()">
+                            <select onchange="mudarStatus(this, ${i})">
+                                <option value="ok" ${item.status==='ok'?'selected':''}>OK</option>
+                                <option value="atencao" ${item.status==='atencao'?'selected':''}>Atenção</option>
+                                <option value="critico" ${item.status==='critico'?'selected':''}>Crítico</option>
+                            </select>
+                            <button class="btn-remover" onclick="removerItem(${i})" title="Remover">×</button>
+                        </div>
+                        <textarea placeholder="Observação" oninput="autoSalvar()">${item.obs || ''}</textarea>
                     </div>
-                    <textarea placeholder="Observação" oninput="autoSalvar()">${item.obs}</textarea>
-                </div>
-            `).join('');
+                `).join('');
+            } catch(e) {
+                console.error('Erro ao renderizar itens:', e);
+            }
         }
 
         function adicionarItem() {
@@ -1894,32 +1933,38 @@
         }
 
         function autoSalvar() {
-            const c = clientes[clienteAtual];
-            if (!c.veiculos || c.veiculos.length === 0) {
-                c.veiculos = [{ veiculo: c.veiculo, placa: c.placa, ano: c.ano, km: c.km, itens: [], servicos: [] }];
+            try {
+                const c = clientes[clienteAtual];
+                if (!c.veiculos || c.veiculos.length === 0) {
+                    c.veiculos = [{ veiculo: c.veiculo || '', placa: c.placa || '', ano: c.ano || '', km: c.km || '', itens: [], servicos: [] }];
+                }
+                const v = c.veiculos[veiculoAtual] || c.veiculos[0];
+                
+                document.querySelectorAll('.item-row').forEach((row, i) => {
+                    if (v.itens[i]) {
+                        v.itens[i].nome = row.querySelector('input').value;
+                        v.itens[i].obs = row.querySelector('textarea').value;
+                    }
+                });
+                v.servicos = [];
+                document.querySelectorAll('#servicesGrid input:checked').forEach(cb => {
+                    const parent = cb.closest('.service-item');
+                    const select = parent.querySelector('.servico-urgencia');
+                    const urgencia = select ? select.value : '';
+                    v.servicos.push({ nome: cb.value, urgencia: urgencia });
+                });
+                const outros = document.getElementById('outrosServicos').value;
+                const outrosUrgencia = document.getElementById('outrosServicosUrgencia').value;
+                if (outros) {
+                    v.servicos.push({ nome: outros, urgencia: outrosUrgencia });
+                }
+                v.ultimaAtt = new Date().toISOString();
+                c.ultimaAtt = new Date().toISOString();
+                salvarDados();
+                mostrarMsgSalvo();
+            } catch(e) {
+                console.error('Erro ao auto salvar:', e);
             }
-            const v = c.veiculos[veiculoAtual] || c.veiculos[0];
-            
-            document.querySelectorAll('.item-row').forEach((row, i) => {
-                v.itens[i].nome = row.querySelector('input').value;
-                v.itens[i].obs = row.querySelector('textarea').value;
-            });
-            v.servicos = [];
-            document.querySelectorAll('#servicesGrid input:checked').forEach(cb => {
-                const parent = cb.closest('.service-item');
-                const select = parent.querySelector('.servico-urgencia');
-                const urgencia = select ? select.value : '';
-                v.servicos.push({ nome: cb.value, urgencia: urgencia });
-            });
-            const outros = document.getElementById('outrosServicos').value;
-            const outrosUrgencia = document.getElementById('outrosServicosUrgencia').value;
-            if (outros) {
-                v.servicos.push({ nome: outros, urgencia: outrosUrgencia });
-            }
-            v.ultimaAtt = new Date().toISOString();
-            c.ultimaAtt = new Date().toISOString();
-            salvarDados();
-            mostrarMsgSalvo();
         }
 
         function salvarDados() {
