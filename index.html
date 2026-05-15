@@ -700,20 +700,25 @@
                 try {
                     const dados = JSON.parse(sessao);
                     if (dados && dados.email && dados.senha) {
-                        restaurarSessao();
+                        const restaurado = restaurarSessao();
+                        sessaoRestaurada = true;
+                        if (!restaurado) {
+                            mostrarLogin();
+                        }
                     } else {
-                        localStorage.removeItem('sessaoUsuario');
+                        sessaoRestaurada = true;
                         mostrarLogin();
                     }
                 } catch(e) {
-                    localStorage.removeItem('sessaoUsuario');
+                    console.error('Erro ao restaurar sessão:', e);
+                    sessaoRestaurada = true;
                     mostrarLogin();
                 }
             } else {
+                sessaoRestaurada = true;
                 mostrarLogin();
             }
             
-            sessaoRestaurada = true;
             verificarMostrarAjuda();
         }
 
@@ -760,10 +765,10 @@
 
         function restaurarSessao() {
             const sessao = localStorage.getItem('sessaoUsuario');
-            if (!sessao) return;
+            if (!sessao) return false;
             
             const dados = JSON.parse(sessao);
-            if (!dados || !dados.email || !dados.senha) return;
+            if (!dados || !dados.email || !dados.senha) return false;
             
             if (dados.email === 'admin@autocheck.com') {
                 usuarioAtual = adminMaster;
@@ -775,7 +780,7 @@
                 document.getElementById('planBadge').textContent = 'MASTER';
                 document.getElementById('adminPanel').classList.remove('hidden');
                 mostrarDashboardAdmin();
-                return;
+                return true;
             }
             
             usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
@@ -787,7 +792,9 @@
                 
                 const dadosCli = localStorage.getItem('clientes_' + user.email);
                 if (dadosCli) {
-                    try { clientes = JSON.parse(dadosCli); } catch(e) { clientes = []; }
+                    try { clientes = JSON.parse(dadosCli) || []; } catch(e) { clientes = []; }
+                } else {
+                    clientes = [];
                 }
                 
                 document.getElementById('loginScreen').classList.add('hidden');
@@ -797,16 +804,11 @@
                 
                 verificarPagamento();
                 renderizarClientes();
+                return true;
             }
+            return false;
         }
 
-        window.addEventListener('storage', function(e) {
-            if (!sessaoRestaurada) return;
-            
-            if (e.key === 'sessaoUsuario' && !e.newValue) {
-                logout();
-            }
-        });
 
         function salvarSessao() {
             if (usuarioAtual) {
@@ -1425,6 +1427,8 @@
                 if (logo) usuarios[idx].logo = logo;
                 localStorage.setItem('usuarios', JSON.stringify(usuarios));
             }
+            
+            salvarSessao();
             
             document.getElementById('nomeUsuario').textContent = nome;
             alert('Perfil atualizado!');

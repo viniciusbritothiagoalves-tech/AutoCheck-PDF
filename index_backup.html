@@ -1,0 +1,620 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck PDF</title>
+    <link rel="icon" href="autochek-logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
+        
+        :root {
+            --preto: #000;
+            --vermelho: #dc2626;
+            --branco: #fff;
+            --primary: #dc2626;
+            --primary-dark: #b91c1c;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --bg-dark: #050505;
+            --bg-card: #121212;
+            --bg-input: #1a1a1a;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --plan-price: #22c55e;
+        }
+        
+        @media (min-width: 768px) {
+            :root { --scale: 1; }
+        }
+        @media (max-width: 767px) {
+            :root { --scale: 1.1; }
+        }
+        
+        body { background: var(--bg-dark); color: var(--text); min-height: 100vh; font-size: calc(14px * var(--scale)); }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
+        .logo-area { text-align: center; margin-bottom: 30px; }
+        .logo-area h1 { font-size: calc(38px * var(--scale)); color: var(--branco); font-weight: 700; }
+        .logo-area h1 span { color: var(--vermelho); }
+        .logo-area p { color: var(--text-muted); font-size: calc(16px * var(--scale)); margin-top: 8px; }
+        
+        .tool-logo { position: fixed; top: 15px; right: 15px; z-index: 50; opacity: 0.6; transition: opacity 0.3s; }
+        .tool-logo:hover { opacity: 1; }
+        .tool-logo img { max-height: 40px; max-width: 120px; object-fit: contain; }
+        
+        .card { background: var(--bg-card); border-radius: 12px; padding: 25px; margin-bottom: 20px; border: 1px solid var(--border); }
+        
+        .card-title { font-size: calc(22px * var(--scale)); font-weight: 600; margin-bottom: 20px; color: var(--branco); }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: calc(15px * var(--scale)); color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: var(--text); font-size: calc(15px * var(--scale));
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        
+        .input-senha { position: relative; display: flex; align-items: center; }
+        .input-senha input { width: 100%; padding-right: 40px; padding-top: 14px; padding-bottom: 14px; height: auto; }
+        .input-senha .toggle-senha {
+            position: absolute; right: 10px;
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+            width: 24px; height: 100%; display: flex; align-items: center; justify-content: center;
+        }
+        .input-senha .toggle-senha svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+        
+        .btn { background: var(--primary); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-size: calc(15px * var(--scale)); font-weight: 600; cursor: pointer; }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-danger { background: var(--danger); }
+        .btn-sm { padding: 10px 16px; font-size: calc(13px * var(--scale)); }
+        .btn-block { width: 100%; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; background: var(--bg-input); border: none; color: var(--text-muted); border-radius: 8px; cursor: pointer; font-size: calc(14px * var(--scale)); }
+        .tab.active { background: var(--primary); color: #fff; }
+        
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .service-item { background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: calc(14px * var(--scale)); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .service-item.selected { border-color: var(--primary); background: rgba(220, 38, 38, 0.2); }
+        .service-item input { accent-color: var(--primary); }
+        
+        .item-row { background: var(--bg-input); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--success); }
+        .item-row.atencao { border-left-color: var(--warning); }
+        .item-row.critico { border-left-color: var(--danger); }
+        .item-row .item-header { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+        .item-row input, .item-row select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
+        .item-row input { flex: 1; min-width: 150px; }
+        .item-row textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); }
+        .btn-remover { background: var(--danger); color: #fff; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; }
+        .btn-remover:hover { background: #b91c1c; }
+        
+        .add-btn { background: transparent; border: 2px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; }
+        
+        .client-list { display: grid; gap: 12px; }
+        .client-item { background: var(--bg-input); border-radius: 10px; padding: 15px; border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .client-item:hover { border-color: var(--primary); }
+        .client-info h3 { font-size: 15px; margin-bottom: 3px; }
+        .client-info p { font-size: 12px; color: var(--text-muted); }
+        
+        .auto-save { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity 0.3s; z-index: 100; }
+        .auto-save.show { opacity: 1; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px; overflow-y: auto; }
+        .modal.active { display: flex; align-items: flex-start; justify-content: center; padding-top: 20px; }
+        .modal-content { background: var(--bg-card); border-radius: 12px; padding: 30px; width: 100%; max-width: 600px; }
+        .modal-content h3 { color: var(--branco); margin-bottom: 20px; }
+        
+        .doc-preview { background: #fff; color: #222; padding: 25px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-size: 11px; }
+        .doc-preview h1 { text-align: center; font-size: 18px; margin-bottom: 5px; color: #000; }
+        .doc-preview h2 { font-size: 13px; margin: 12px 0 8px; background: #f0f0f0; padding: 5px; color: #000; }
+        .doc-preview table { width: 100%; border-collapse: collapse; }
+        .doc-preview th { background: #1a1a2e; color: #fff; padding: 6px; text-align: left; font-size: 10px; }
+        .doc-preview td { padding: 5px; border: 1px solid #ddd; font-size: 10px; }
+        .doc-preview .status-ok { color: #16a34a; font-weight: 700; }
+        .doc-preview .status-atencao { color: #ca8a04; font-weight: 700; }
+        .doc-preview .status-critico { color: #dc2626; font-weight: 700; }
+        .doc-preview .urgente { background: #fee; color: #dc2626; font-weight: 700; padding: 8px; border-radius: 4px; }
+        .doc-preview .assinatura { margin-top: 30px; text-align: right; }
+        .doc-preview .linha { border-bottom: 1px solid #333; width: 200px; display: inline-block; margin-top: 40px; }
+        
+        .wa-preview { background: #e5ddd6; padding: 15px; border-radius: 8px; }
+        .wa-bubble { background: #dcf8c6; padding: 10px 14px; border-radius: 8px; display: inline-block; font-size: 13px; line-height: 1.5; word-wrap: break-word; }
+        
+        .hidden { display: none !important; }
+        
+        .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .plan-card { background: var(--bg-input); border: 2px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .plan-card:hover { border-color: var(--primary); }
+        .plan-card.selected { border-color: var(--primary); background: rgba(220, 38, 38, 0.1); }
+        .plan-card h3 { color: var(--branco); font-size: 18px; margin-bottom: 10px; }
+        .plan-card .price { font-size: 24px; color: var(--primary); font-weight: 700; margin-bottom: 10px; }
+        .plan-card .features { font-size: 12px; color: var(--text-muted); text-align: left; margin-top: 10px; }
+        .plan-card .features li { margin-bottom: 5px; }
+        
+        .admin-badge { background: var(--primary); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 10px; }
+        
+        .stat-card { background: var(--bg-input); border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-card .number { font-size: 28px; color: var(--primary); font-weight: 700; }
+        .stat-card .label { font-size: 12px; color: var(--text-muted); }
+        
+        .pdf-badge { background: var(--success); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+        
+        @media print { body { background: #fff; } .modal-content { box-shadow: none; } }
+        
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .card { padding: 15px; }
+            .btn-group { flex-direction: column; }
+            .btn-group .btn { width: 100%; }
+            .plans-grid { grid-template-columns: 1fr; }
+            .item-row .item-header { flex-direction: column; }
+            .client-item { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
+    </style>
+    <div id="toolLogo" class="tool-logo" style="display: none;"></div>
+</head>
+<body>
+    <script>
+        (function() {
+            var logoPath = 'autochek-logo.png';
+            var img = new Image();
+            img.onload = function() {
+                document.getElementById('toolLogo').innerHTML = '<img src="' + logoPath + '" alt="AutoCheck PDF">';
+                document.getElementById('toolLogo').style.display = 'block';
+            };
+            img.onerror = function() {};
+            img.src = logoPath;
+        })();
+    </script>
+    <div id="loginScreen" class="container" style="max-width: 400px; padding-top: 50px;">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+        </div>
+        <div class="card">
+            <h2 style="text-align: center; color: var(--branco); margin-bottom: 20px;">Entrar</h2>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="seu@email.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Senha</label>
+                <div class="input-senha">
+                    <input type="password" id="loginSenha" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢">
+                    <button type="button" class="toggle-senha" onclick="toggleSenha('loginSenha', this)">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-block" onclick="fazerLogin()">Entrar</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarCadastro()" style="color: var(--primary); font-size: 13px;">Criar conta</a>
+                <span style="color: var(--text-muted); margin: 0 10px;">|</span>
+                <a href="#" onclick="mostrarRecuperar()" style="color: var(--primary); font-size: 13px;">Esqueci a senha</a>
+            </div>
+        </div>
+        
+    </div>
+
+    <div id="recuperarScreen" class="container hidden" style="max-width: 400px; padding-top: 50px;">
+        <button class="btn" onclick="mostrarLogin()" style="background: var(--bg-input); margin-bottom: 15px;">â† Voltar</button>
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <p>Recuperar senha</p>
+        </div>
+        <div class="card" id="recuperarStep1">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Seu Email</label>
+                <input type="email" id="recEmail" placeholder="seu@email.com">
+            </div>
+            <button class="btn btn-block" onclick="buscarUsuarioRecuperar()">Continuar</button>
+        </div>
+        <div class="card hidden" id="recuperarStep2">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Pergunta de SeguranÃ§a</label>
+                <div id="perguntaUsuario" style="background: var(--bg-input); padding: 12px; border-radius: 8px; color: var(--text);"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Sua Resposta</label>
+                <input type="text" id="recResposta" placeholder="Sua resposta">
+            </div>
+            <button class="btn btn-block" onclick="verificarRespostaRecuperar()">Verificar</button>
+        </div>
+        <div class="card hidden" id="recuperarStep3">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Nova Senha</label>
+                <div class="input-senha">
+                    <input type="password" id="novaSenhaRec" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢" oninput="verificarSenhaNova(this.value)">
+                    <button type="button" class="toggle-senha" onclick="toggleSenha('novaSenhaRec', this)">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="senhaRequisitoRec" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="r-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dÃ­gitos</span>
+                <span id="r-mai" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">A-Z</span>
+                <span id="r-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
+                <span id="r-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
+            </div>
+            <button class="btn btn-success btn-block" onclick="salvarNovaSenha()">Salvar Nova Senha</button>
+        </div>
+    </div>
+
+    <div id="cadastroScreen" class="container hidden" style="max-width: 450px; padding-top: 30px;">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <p>Criar nova conta</p>
+        </div>
+        <div class="card">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nome da Oficina</label>
+                <input type="text" id="cadNome" placeholder="Nome da oficina">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" id="cadEmail" placeholder="seu@email.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Criar Senha</label>
+                <div class="input-senha">
+                    <input type="password" id="cadSenha" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢" oninput="verificarSenha(this.value)">
+                    <button type="button" class="toggle-senha" onclick="toggleSenha('cadSenha', this)">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="senhaRequisito" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="s-min" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">6+ dÃ­gitos</span>
+                <span id="s-mai" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">A-Z</span>
+                <span id="s-num" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">0-9</span>
+                <span id="s-esp" style="font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 3px 8px; border-radius: 4px;">!@#$%&</span>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>WhatsApp</label>
+                <input type="tel" id="cadWhatsapp" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Pergunta de SeguranÃ§a (para recuperar senha)</label>
+                <select id="cadPergunta">
+                    <option value="pet">Qual nome do seu primeiro pet?</option>
+                    <option value="cidade">Qual cidade vocÃª nasceu?</option>
+                    <option value="escola">Nome da primeira escola?</option>
+                    <option value="carro">Qual foi seu primeiro carro?</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Resposta</label>
+                <input type="text" id="cadResposta" placeholder="Sua resposta secreta">
+            </div>
+            <button class="btn btn-success btn-block" onclick="criarConta()">Criar Conta</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="mostrarLogin()" style="color: var(--primary); font-size: 13px;">JÃ¡ tem conta? Entrar</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="container hidden">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px;">
+                <span id="nomeUsuario" style="color: var(--branco); font-weight: 600;"></span>
+                <span id="planBadge" class="admin-badge" style="display: none;"></span>
+            </div>
+        </div>
+        
+        <div id="adminPanel" class="card hidden">
+            <div class="card-title">Painel Admin - GestÃ£o de Clientes</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="stat-card">
+                    <div class="number" id="totalUsuarios">0</div>
+                    <div class="label">Total UsuÃ¡rios</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="totalPdfAdmin">0</div>
+                    <div class="label">PDFs Gerados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="usuariosAtivos">0</div>
+                    <div class="label">Ativos</div>
+                </div>
+            </div>
+            <div class="card-title" style="margin-top: 20px;">Todos os Clientes</div>
+            <div id="todosClientesLista" class="client-list"></div>
+        </div>
+
+        <div id="paymentBanner" class="card hidden" style="border: 2px solid var(--warning); background: rgba(202, 138, 4, 0.1);">
+            <div style="text-align: center; padding: 15px;">
+                <h3 style="color: var(--warning); margin-bottom: 8px;">âš ï¸ Plano NÃ£o Ativo</h3>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Assine um plano para continuar usando o sistema</p>
+                <button class="btn" onclick="mostrarPlanos()">Escolher Plano</button>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, var(--bg-card) 0%, #2a3a4f 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 style="color: var(--branco); margin-bottom: 5px;" id="nomeUsuario"></h2>
+                    <p style="color: var(--text-muted); font-size: 13px;" id="planoInfo">Plano: Ativo</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-sm" onclick="editarPerfil()">âš™ï¸ Perfil</button>
+                    <button class="btn btn-sm" onclick="mostrarPlanos()">ðŸ“‹ Planos</button>
+                    <button class="btn btn-sm btn-danger" onclick="logout()">â» Sair</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h3 class="card-title" style="margin: 0;">ðŸ”§ Meus Clientes</h3>
+                <button class="btn btn-success" id="btnNovoCliente" onclick="novoCliente()">âž• Novo Cliente</button>
+            </div>
+            <div id="clientesLista" class="client-list"></div>
+            <p id="semClientes" class="hidden" style="text-align: center; color: var(--text-muted); padding: 40px; font-size: 16px;">Nenhum cliente cadastrado ainda</p>
+        </div>
+    </div>
+
+    <div id="planosScreen" class="container hidden" style="max-width: 900px; padding-top: 30px;">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <p>Escolha o melhor plano para sua oficina</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+            <div class="plan-card" id="plan-basico" style="border: 2px solid var(--border);">
+                <h3 style="font-size: 22px; color: var(--branco);">BÃ¡sico</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 97<span style="font-size: 16px;">/mÃªs</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>ðŸ”§ 1 dispositivo</li>
+                    <li>ðŸ“„ PDFs ilimitados</li>
+                    <li>ðŸ“‘ GeraÃ§Ã£o de PDF</li>
+                    <li>ðŸ“± WhatsApp automÃ¡tico</li>
+                </ul>
+                <button class="btn btn-success btn-block" onclick="irParaPagamento('basico')">Assinar Agora</button>
+            </div>
+            
+            <div class="plan-card" id="plan-pro" style="border: 2px solid var(--primary); background: rgba(220, 38, 38, 0.1);">
+                <div style="text-align: center; background: var(--primary); color: #fff; padding: 6px; border-radius: 8px 8px 0 0; margin: -25px -25px 15px -25px; font-size: 12px; font-weight: 600;">MAIS POPULAR</div>
+                <h3 style="font-size: 22px; color: var(--branco);">Profissional</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 147<span style="font-size: 16px;">/mÃªs</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>ðŸ”§ 3 dispositivos</li>
+                    <li>ðŸ“„ PDFs ilimitados</li>
+                    <li>ðŸ“‘ GeraÃ§Ã£o de PDF</li>
+                    <li>ðŸ“± WhatsApp automÃ¡tico</li>
+                    <li>ðŸ“Š HistÃ³rico completo</li>
+                </ul>
+                <button class="btn btn-success btn-block" onclick="irParaPagamento('pro')">Assinar Agora</button>
+            </div>
+            
+            <div class="plan-card" id="plan-master" style="border: 2px solid var(--border);">
+                <h3 style="font-size: 22px; color: var(--branco);">Gold</h3>
+                <div class="price" style="font-size: 32px; color: var(--plan-price); margin: 10px 0; font-weight: 700;">R$ 197<span style="font-size: 16px;">/mÃªs</span></div>
+                <ul class="features" style="margin-bottom: 15px; font-size: 15px;">
+                    <li>ðŸ”§ 5+ dispositivos</li>
+                    <li>âœ… Tudo do Profissional</li>
+                    <li>ðŸŽ¨ Logo personalizado</li>
+                    <li>â­ Prioridade suporte</li>
+                </ul>
+                <button class="btn btn-success btn-block" onclick="irParaPagamento('master')">Assinar Agora</button>
+            </div>
+        </div>
+        
+        <button class="btn btn-block" onclick="voltarDaTelaPlanos()" style="max-width: 300px; margin: 0 auto; background: var(--bg-input);">â† Voltar</button>
+    </div>
+
+    <div id="editarPerfilScreen" class="container hidden" style="max-width: 400px; padding-top: 30px;">
+        <div class="logo-area">
+            <h1>AutoCheck <span>PDF</span></h1>
+            <p>Editar Perfil</p>
+        </div>
+        <div class="card">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nome da Oficina</label>
+                <input type="text" id="editNome" placeholder="Nome da oficina">
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Email</label>
+                <input type="email" id="editEmail" disabled>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Nova Senha (deixe em branco para manter)</label>
+                <input type="password" id="editSenha" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 14px; color: var(--text); width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>WhatsApp</label>
+                <input type="tel" id="editWhatsapp" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Logo da Oficina (aparece nos PDFs)</label>
+                <input type="file" id="editLogo" accept="image/*" onchange="previewLogo(this)" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); width: 100%;">
+                <div id="logoPreview" style="margin-top: 10px;"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Seu Plano</label>
+                <div id="planoAtualDisplay" style="background: var(--bg-input); padding: 12px; border-radius: 8px; color: var(--branco); font-weight: 600;"></div>
+            </div>
+            <div class="form-group" id="testePlanoGroup" style="margin-bottom: 20px; display: none;">
+                <label>Testar Plano (usuÃ¡rios teste)</label>
+                <select id="testePlanoSelect" onchange="trocarPlanoTeste(this.value)" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); width: 100%;">
+                    <option value="basico">BÃ¡sico - 1 dispositivo</option>
+                    <option value="pro">Profissional - 3 dispositivos</option>
+                    <option value="master">Gold - 5+ dispositivos</option>
+                </select>
+            </div>
+            <button class="btn btn-success btn-block" onclick="salvarEdicaoPerfil()">Salvar AlteraÃ§Ãµes</button>
+            <button class="btn btn-block" onclick="mostrarClientes()" style="margin-top: 10px;">Voltar</button>
+        </div>
+    </div>
+
+    <div id="formCliente" class="container hidden">
+        <div class="card">
+            <div class="card-title" id="tituloForm">Novo Cliente</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nome do Cliente</label>
+                    <input type="text" id="cliNome" placeholder="Nome do cliente">
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp</label>
+                    <input type="tel" id="cliWhatsapp" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Modelo do VeÃ­culo</label>
+                    <input type="text" id="cliVeiculo" placeholder="Ex: Volkswagen Gol">
+                </div>
+                <div class="form-group">
+                    <label>Placa</label>
+                    <input type="text" id="cliPlaca" placeholder="ABC-1234" style="text-transform: uppercase;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ano</label>
+                    <input type="text" id="cliAno" placeholder="2020">
+                </div>
+                <div class="form-group">
+                    <label>Km Atual</label>
+                    <input type="text" id="cliKm" placeholder="45.000">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="salvarCliente()">Salvar</button>
+                <button class="btn" onclick="mostrarClientes()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="formLaudo" class="container hidden">
+        <div class="card">
+            <div class="card-title" id="laudoTitulo">Atendimento</div>
+            <div class="tabs">
+                <button class="tab active" onclick="mudarAba('itens')">Itens</button>
+                <button class="tab" onclick="mudarAba('servicos')">ServiÃ§os</button>
+            </div>
+            
+            <div id="aba-itens">
+                <div id="itensLista"></div>
+                <button class="add-btn" onclick="adicionarItem()">+ Adicionar Item</button>
+            </div>
+            
+            <div id="aba-servicos" class="hidden">
+                <div class="services-grid" id="servicesGrid"></div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Outros serviÃ§os</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                        <select id="outrosServicosUrgencia" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text);">
+                            <option value="">Sem urgÃªncia</option>
+                            <option value="atencao">âš ï¸ AtenÃ§Ã£o</option>
+                            <option value="critico">ðŸ”´ Urgente</option>
+                        </select>
+                        <input type="text" id="outrosServicos" placeholder="Descreva outros serviÃ§os..." oninput="autoSalvar()" style="flex: 1;">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="gerarLaudo('orcamento')">RelatÃ³rio de ServiÃ§os</button>
+                <button class="btn btn-warning" onclick="gerarLaudo('laudo')">Certificado de ConclusÃ£o</button>
+                <button class="btn" onclick="mostrarClientes()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalPreview" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitulo">Documento</h3>
+            <div class="tabs">
+                <button class="tab active" onclick="mostrarDocAba('docLaudo')">Documento</button>
+                <button class="tab" onclick="mostrarDocAba('docWhatsapp')">WhatsApp</button>
+            </div>
+            <div id="docLaudo" class="doc-preview"></div>
+            <div id="docWhatsapp" class="hidden" style="padding: 20px; background: linear-gradient(135deg, #075e54 0%, #128c7e 100%); border-radius: 12px;">
+                <div style="background: #fff; border-radius: 12px; padding: 15px; max-width: 350px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <div style="width: 40px; height: 40px; background: #25d366; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #fff; font-weight: bold;">W</span>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #333;">WhatsApp</div>
+                            <div style="font-size: 11px; color: #888;">Mensagem automÃ¡tica</div>
+                        </div>
+                    </div>
+                    <div id="waPreview" style="background: #f0f0f0; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #222; word-wrap: break-word; white-space: pre-wrap;"></div>
+                </div>
+                <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-warning" onclick="downloadPdf()" style="padding: 12px 20px; font-size: 14px;">ðŸ“¥ Baixar PDF</button>
+                    <button class="btn btn-success" onclick="enviarWhatsApp()" style="background: #25d366; padding: 12px 30px; font-size: 14px;">ðŸ’¬ Abrir WhatsApp</button>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="fecharModal()">Fechar</button>
+                <button class="btn btn-warning" onclick="downloadPdf()">â¬‡ï¸ Baixar PDF</button>
+                <button class="btn btn-success" onclick="imprimirDoc()">ðŸ–¨ï¸ Imprimir</button>
+                <button class="btn" style="background: #25d366;" onclick="enviarWhatsApp()">ðŸ’¬ Abrir WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="autoSaveMsg" class="auto-save">âœ“ Salvo</div>
+
+    <div id="ajudaModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: var(--branco); margin: 0;">Bem-vindo ao AutoCheck!</h3>
+                <button onclick="fecharAjuda()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="color: var(--text); font-size: 15px; line-height: 1.6;">
+                <p style="margin-bottom: 15px;">Parece que vocÃª ainda nÃ£o assinou um plano. <strong>Assine um plano para desbloquear todas as funcionalidades:</strong></p>
+                
+                <div style="background: var(--bg-input); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin-bottom: 10px;"><strong>ðŸ“‹ Como funciona:</strong></p>
+                    <ul style="margin-left: 20px; color: var(--text-muted);">
+                        <li>Escolha um plano abaixo e clique em "Assinar Agora"</li>
+                        <li>ApÃ³s o pagamento, vocÃª terÃ¡ acesso completo ao sistema</li>
+                        <li>Adicione clientes e gere relatÃ³rios profissionais</li>
+                        <li>Envie documentos via WhatsApp automaticamente</li>
+                    </ul>
+                </div>
+                
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center;">Clique no botÃ£o abaixo para escolher seu plano!</p>
+            </div>
+            <button class="btn btn-success btn-block" onclick="fecharAjuda(); mostrarPlanos();">Ver Planos</button>
+            <button class="btn btn-block" onclick="fecharAjuda()" style="margin-top: 10px; background: var(--bg-input);">Agora nÃ£o</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+        let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+        let usuarioAtual = null;
+        let clientes = [];
+        let clienteAtual = null;
+        let tipoLaudo = '';
+        let whatsappLink = '';
+        let pdfBlob = null;
+        let usuarioPago = false;
+        let planoSelecionado = 'basico';
+        let sessaoRestaurada = false;
+        
+        let inactivityTimer = null;
+        const INACTIVITY_TIMEOUT = 3 * 60 * 60 * 1000;
+        
+        const funcionalidades = {
+            basico: {
+                maxDispositivos: 1,
+                pdfsIlimitados: true,
+                gerarPdf: true,
+                whatsapp: true,
