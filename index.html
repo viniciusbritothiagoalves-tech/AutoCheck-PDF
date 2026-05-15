@@ -126,6 +126,7 @@
         .doc-preview .status-ok { color: #16a34a; font-weight: 700; }
         .doc-preview .status-atencao { color: #ca8a04; font-weight: 700; }
         .doc-preview .status-critico { color: #dc2626; font-weight: 700; }
+        .doc-preview .status-recusado { color: #d97706; font-weight: 700; }
         .doc-preview .urgente { color: #dc2626; font-weight: 700; padding: 8px; border-left: 4px solid #dc2626; background: #fff5f5; }
         .doc-preview .obs-box { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-size: 10px; line-height: 1.5; max-width: 100%; overflow: visible; }
         .doc-preview .assinatura { margin-top: 30px; text-align: right; color: #555; }
@@ -1936,6 +1937,7 @@
                                 <option value="ok" ${item.status==='ok'?'selected':''}>OK</option>
                                 <option value="atencao" ${item.status==='atencao'?'selected':''}>Atenção</option>
                                 <option value="critico" ${item.status==='critico'?'selected':''}>Crítico</option>
+                                <option value="recusado" ${item.status==='recusado'?'selected':''}>❌ Não Autorizado</option>
                             </select>
                             <button class="btn-remover" onclick="removerItem(${i})" title="Remover">×</button>
                         </div>
@@ -2159,8 +2161,19 @@ function gerarDocs() {
 
             let tabela = '<table><thead><tr><th>Item</th><th>Status</th><th>Observação</th></tr></thead><tbody>';
             (v.itens || []).forEach(item => {
-                let cls = item.status === 'ok' ? 'status-ok' : item.status === 'atencao' ? 'status-atencao' : 'status-critico';
-                let lbl = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : 'CRÍTICO';
+                let cls, lbl;
+                if (tipoLaudo === 'orcamento') {
+                    cls = item.status === 'ok' ? 'status-ok' : item.status === 'atencao' ? 'status-atencao' : item.status === 'recusado' ? 'status-recusado' : 'status-critico';
+                    lbl = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : item.status === 'recusado' ? 'NÃO AUTORIZADO' : 'CRÍTICO';
+                } else {
+                    if (item.status === 'ok') {
+                        cls = 'status-ok'; lbl = 'OK';
+                    } else if (item.status === 'recusado') {
+                        cls = 'status-recusado'; lbl = 'NÃO AUTORIZADO';
+                    } else {
+                        cls = 'status-ok'; lbl = 'REALIZADO';
+                    }
+                }
                 tabela += `<tr><td>${item.nome || '-'}</td><td class="${cls}">${lbl}</td><td>${item.obs || '-'}</td></tr>`;
             });
             tabela += '</tbody></table>';
@@ -2272,6 +2285,17 @@ function gerarDocs() {
                     });
                     corpo += '\n';
                 }
+                
+                const recItens = (v.itens || []).filter(i => i.status === 'recusado');
+                if (recItens.length > 0) {
+                    corpo += 'Itens NÃO AUTORIZADOS:\n';
+                    recItens.forEach(i => {
+                        corpo += '  ❌ ' + i.nome;
+                        if (i.obs) corpo += ' - ' + i.obs;
+                        corpo += '\n';
+                    });
+                    corpo += '\n';
+                }
                 corpo += '\n';
                 
                 corpo += '\nO documento completo com todos os detalhes está em anexo.\n\n';
@@ -2300,16 +2324,16 @@ function gerarDocs() {
                     corpo += '\n';
                 }
                 
-                const ok = (v.itens || []).filter(i => i.status === 'ok');
+                const ok = (v.itens || []).filter(i => i.status === 'ok' || i.status === 'atencao' || i.status === 'critico');
                 if (ok.length > 0) {
-                    corpo += 'Itens Verificados e OK:\n' + ok.map(i => '  ✓ ' + i.nome).join('\n') + '\n\n';
+                    corpo += 'Itens Verificados / Realizados:\n' + ok.map(i => '  ✅ ' + i.nome).join('\n') + '\n\n';
                 }
                 
-                const at = (v.itens || []).filter(i => i.status === 'atencao');
-                if (at.length > 0) {
-                    corpo += 'Itens para acompanhamento (não urgentes):\n';
-                    at.forEach(i => {
-                        corpo += '  ✋ ' + i.nome;
+                const rec = (v.itens || []).filter(i => i.status === 'recusado');
+                if (rec.length > 0) {
+                    corpo += 'Itens NÃO AUTORIZADOS:\n';
+                    rec.forEach(i => {
+                        corpo += '  ❌ ' + i.nome;
                         if (i.obs) corpo += ' - ' + i.obs;
                         corpo += '\n';
                     });
@@ -2436,16 +2460,25 @@ function gerarPdfBlob(html, nomeCliente, tipo) {
                     y = 25;
                 }
                 
-                let corBorda, corFundo;
-                if (item.status === 'ok') {
-                    corBorda = [22, 163, 74];
-                    corFundo = [240, 255, 240];
-                } else if (item.status === 'atencao') {
-                    corBorda = [200, 150, 0];
-                    corFundo = [255, 255, 230];
+                let corBorda, corFundo, labelStatus;
+                if (tipo === 'orcamento') {
+                    if (item.status === 'ok') {
+                        corBorda = [22, 163, 74]; corFundo = [240, 255, 240]; labelStatus = 'OK';
+                    } else if (item.status === 'atencao') {
+                        corBorda = [200, 150, 0]; corFundo = [255, 255, 230]; labelStatus = 'ATENÇÃO';
+                    } else if (item.status === 'recusado') {
+                        corBorda = [100, 100, 100]; corFundo = [245, 245, 245]; labelStatus = 'NÃO AUTORIZADO';
+                    } else {
+                        corBorda = [200, 0, 0]; corFundo = [255, 240, 240]; labelStatus = 'CRÍTICO';
+                    }
                 } else {
-                    corBorda = [200, 0, 0];
-                    corFundo = [255, 240, 240];
+                    if (item.status === 'ok') {
+                        corBorda = [22, 163, 74]; corFundo = [240, 255, 240]; labelStatus = 'OK';
+                    } else if (item.status === 'recusado') {
+                        corBorda = [200, 100, 0]; corFundo = [255, 245, 230]; labelStatus = 'NÃO AUTORIZADO';
+                    } else {
+                        corBorda = [22, 163, 74]; corFundo = [240, 255, 240]; labelStatus = 'REALIZADO';
+                    }
                 }
                 
                 doc.setFillColor(corFundo[0], corFundo[1], corFundo[2]);
@@ -2462,7 +2495,6 @@ function gerarPdfBlob(html, nomeCliente, tipo) {
                 doc.text(nomeItem, xPos + 25, y, { align: 'center' });
                 xPos += colWidths[0];
                 
-                let labelStatus = item.status === 'ok' ? 'OK' : item.status === 'atencao' ? 'ATENÇÃO' : 'CRÍTICO';
                 doc.text(labelStatus, xPos + 17, y, { align: 'center' });
                 xPos += colWidths[1];
                 
